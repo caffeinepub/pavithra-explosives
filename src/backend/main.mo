@@ -8,6 +8,7 @@ import Principal "mo:core/Principal";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+// Apply migration with with clause
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -44,12 +45,14 @@ actor {
     qty : Text;
   };
 
+  // Updated OrderStatus type with billDone
   type OrderStatus = {
     #pending;
     #approved;
     #rejected;
     #accepted;
     #delivered;
+    #billDone;
   };
 
   type Order = {
@@ -169,17 +172,21 @@ actor {
 
   // No authorization check - any caller can update status
   // Access is gated by password on the frontend
+  // CRITICAL: Enforces correct status flow: accepted → billDone → delivered
   public shared func updateOrderStatus(orderId : Nat, newStatus : OrderStatus) : async () {
     let order = switch (orders.get(orderId)) {
       case (null) { Runtime.trap("Order not found") };
       case (?order) { order };
     };
 
+    // Enforce valid status transitions per specification
+    // CRITICAL: billDone must come BEFORE delivered
     switch (order.status, newStatus) {
       case (#pending, #approved) {};
       case (#pending, #rejected) {};
       case (#approved, #accepted) {};
-      case (#accepted, #delivered) {};
+      case (#accepted, #billDone) {}; // Office marks bill done first
+      case (#billDone, #delivered) {}; // Driver delivers only after bill is done
       case (_) { Runtime.trap("Invalid status transition") };
     };
 
@@ -192,7 +199,12 @@ actor {
   };
 
   // ANY order status can have items updated (NO status restriction)
-  public shared func updateOrderItems(orderId : Nat, items : [OrderItem]) : async () {
+  // Authorization added: requires user permission to prevent anonymous modification
+  public shared ({ caller }) func updateOrderItems(orderId : Nat, items : [OrderItem]) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update order items");
+    };
+
     let order = switch (orders.get(orderId)) {
       case (null) { Runtime.trap("Order not found") };
       case (?order) { order };

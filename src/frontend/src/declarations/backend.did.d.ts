@@ -24,6 +24,7 @@ export interface Order {
 }
 export interface OrderItem { 'qty' : string, 'name' : string }
 export type OrderStatus = { 'pending' : null } |
+  { 'billDone' : null } |
   { 'approved' : null } |
   { 'rejected' : null } |
   { 'delivered' : null } |

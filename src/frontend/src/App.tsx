@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import {
   ArrowLeft,
+  Building2,
   CheckCircle2,
   ClipboardList,
   Filter,
@@ -8,6 +9,7 @@ import {
   LogIn,
   LogOut,
   Package2,
+  Receipt,
   RefreshCw,
   Search,
   ShieldCheck,
@@ -24,6 +26,7 @@ import { useInternetIdentity } from "./hooks/useInternetIdentity";
 
 const DRIVER_PASSWORD = "driver123";
 const MANAGER_PASSWORD = "manager123";
+const OFFICE_PASSWORD = "office123";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,7 +38,9 @@ type Screen =
   | "driverLogin"
   | "driverView"
   | "managerLogin"
-  | "managerView";
+  | "managerView"
+  | "officeLogin"
+  | "officeView";
 
 const EXPLOSIVE_ITEMS: Array<{ name: string; unit: string }> = [
   { name: "25mm GEL", unit: "KGS" },
@@ -58,12 +63,17 @@ const EXPLOSIVE_ITEMS: Array<{ name: string; unit: string }> = [
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string }) {
-  const cls = `badge-${status.toLowerCase()}`;
+  const normalized = status.toLowerCase();
+  const cls = `badge-${normalized}`;
+  const label =
+    normalized === "billdone"
+      ? "Bill Done"
+      : status.charAt(0).toUpperCase() + status.slice(1);
   return (
     <span
       className={`${cls} inline-block px-3 py-0.5 rounded-full text-xs font-bold my-1`}
     >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+      {label}
     </span>
   );
 }
@@ -91,7 +101,7 @@ interface EditableItemState {
 interface OrderCardProps {
   order: Order;
   index: number;
-  viewerRole?: "manager" | "driver" | "blaster";
+  viewerRole?: "manager" | "driver" | "blaster" | "office";
   editableItems?: Record<string, EditableItemState>;
   onItemChange?: (
     originalName: string,
@@ -103,6 +113,7 @@ interface OrderCardProps {
   onAccept?: () => void;
   onDelivered?: () => void;
   onSaveItems?: () => void;
+  onBillDone?: () => void;
   isActioning?: boolean;
 }
 
@@ -117,6 +128,7 @@ function OrderCard({
   onAccept,
   onDelivered,
   onSaveItems,
+  onBillDone,
   isActioning,
 }: OrderCardProps) {
   const cardOcid = `${viewerRole ?? "blaster"}.item.${index}`;
@@ -250,7 +262,7 @@ function OrderCard({
           Accept
         </button>
       )}
-      {viewerRole === "driver" && order.status === OrderStatus.accepted && (
+      {viewerRole === "driver" && order.status === OrderStatus.billDone && (
         <button
           type="button"
           className="btn-primary btn-success btn-sm mt-3"
@@ -262,6 +274,24 @@ function OrderCard({
             <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
           ) : null}
           Delivered
+        </button>
+      )}
+
+      {/* Office action — Bill Done on accepted orders (before delivery) */}
+      {viewerRole === "office" && order.status === OrderStatus.accepted && (
+        <button
+          type="button"
+          className="btn-primary btn-bill btn-sm mt-3 flex items-center gap-1"
+          onClick={onBillDone}
+          disabled={isActioning}
+          data-ocid={`office.primary_button.${index}`}
+        >
+          {isActioning ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Receipt className="h-3 w-3" />
+          )}
+          Bill Done
         </button>
       )}
     </div>
@@ -320,6 +350,14 @@ export default function App() {
         )}
         {screen === "managerView" && (
           <ManagerViewScreen
+            navigate={navigate}
+            actor={actor}
+            actorFetching={actorFetching}
+          />
+        )}
+        {screen === "officeLogin" && <OfficeLoginScreen navigate={navigate} />}
+        {screen === "officeView" && (
+          <OfficeViewScreen
             navigate={navigate}
             actor={actor}
             actorFetching={actorFetching}
@@ -386,6 +424,15 @@ function HomeScreen({ navigate }: { navigate: (s: Screen) => void }) {
         >
           <ShieldCheck className="h-4 w-4" />
           Manager Panel
+        </button>
+        <button
+          type="button"
+          className="btn-primary flex items-center justify-center gap-2"
+          onClick={() => navigate("officeLogin")}
+          data-ocid="home.office_panel_button"
+        >
+          <Building2 className="h-4 w-4" />
+          Office Panel
         </button>
       </div>
     </div>
@@ -1020,6 +1067,7 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
     return (
       o.status === OrderStatus.approved ||
       o.status === OrderStatus.accepted ||
+      o.status === OrderStatus.billDone ||
       o.status === OrderStatus.delivered
     );
   });
@@ -1571,6 +1619,297 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
         className="btn-primary btn-secondary mt-4 flex items-center justify-center gap-2"
         onClick={() => navigate("home")}
         data-ocid="manager.cancel_button"
+      >
+        <LogOut className="h-4 w-4" /> Logout
+      </button>
+    </div>
+  );
+}
+
+// ─── Office Login Screen ──────────────────────────────────────────────────────
+
+function OfficeLoginScreen({ navigate }: { navigate: (s: Screen) => void }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleLogin = () => {
+    setError("");
+    if (password === OFFICE_PASSWORD) {
+      navigate("officeView");
+    } else {
+      setError("Wrong Password");
+    }
+  };
+
+  return (
+    <div className="screen">
+      <h2 className="screen-title">Office Login</h2>
+
+      <div className="order-card">
+        <div className="flex items-center gap-2 mb-4">
+          <Building2
+            className="h-5 w-5"
+            style={{ color: "oklch(var(--navy))" }}
+          />
+          <span
+            className="font-bold text-sm"
+            style={{
+              fontFamily: "Cabinet Grotesk, sans-serif",
+              color: "oklch(var(--navy))",
+            }}
+          >
+            Office Authentication
+          </span>
+        </div>
+
+        <input
+          className="form-input"
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+          data-ocid="office.input"
+        />
+
+        {error && (
+          <div className="error-msg" data-ocid="office.error_state">
+            {error}
+          </div>
+        )}
+      </div>
+
+      <button
+        type="button"
+        className="btn-primary mt-3"
+        onClick={handleLogin}
+        data-ocid="office.primary_button"
+      >
+        Login
+      </button>
+      <button
+        type="button"
+        className="btn-primary btn-secondary"
+        onClick={() => navigate("home")}
+        data-ocid="office.cancel_button"
+      >
+        <span className="flex items-center justify-center gap-2">
+          <ArrowLeft className="h-4 w-4" /> Back
+        </span>
+      </button>
+    </div>
+  );
+}
+
+// ─── Office View Screen ───────────────────────────────────────────────────────
+
+function OfficeViewScreen({ navigate, actor, actorFetching }: ActorProps) {
+  const [filterDate, setFilterDate] = useState("");
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [actioningId, setActioningId] = useState<bigint | null>(null);
+  const [error, setError] = useState("");
+
+  const fetchOrders = useCallback(
+    async (date: string) => {
+      if (!actor) {
+        setError("Network not ready. Please refresh and try again.");
+        return;
+      }
+      setLoading(true);
+      setError("");
+      try {
+        const all = await actor.getAllOrders();
+        setAllOrders(all.filter((o) => o.date === date));
+      } catch {
+        setError("Failed to load orders. Please try again.");
+        setAllOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [actor],
+  );
+
+  // Show only orders that the manager has touched (approved and beyond), plus billDone
+  const orders = allOrders.filter(
+    (o) =>
+      o.status === OrderStatus.approved ||
+      o.status === OrderStatus.accepted ||
+      o.status === OrderStatus.delivered ||
+      o.status === OrderStatus.billDone,
+  );
+
+  const handleBillDone = async (orderId: bigint) => {
+    if (!actor) return;
+    setActioningId(orderId);
+    try {
+      await actor.updateOrderStatus(orderId, OrderStatus.billDone);
+      toast.success("Bill marked as done.");
+      await fetchOrders(filterDate);
+    } catch {
+      toast.error("Failed to update bill status.");
+    } finally {
+      setActioningId(null);
+    }
+  };
+
+  const handleFilter = () => {
+    if (!filterDate) {
+      setError("Please select a date to filter orders.");
+      return;
+    }
+    setError("");
+    fetchOrders(filterDate);
+  };
+
+  // Show connecting spinner while actor is loading
+  if (actorFetching && !actor) {
+    return (
+      <div className="screen">
+        <h2 className="screen-title">Office Panel</h2>
+        <div
+          className="order-card text-center mt-4"
+          data-ocid="office.loading_state"
+        >
+          <Loader2
+            className="h-8 w-8 animate-spin mx-auto mb-3"
+            style={{ color: "oklch(var(--navy))" }}
+          />
+          <p
+            className="text-sm"
+            style={{ color: "oklch(var(--muted-foreground))" }}
+          >
+            Connecting to network...
+          </p>
+        </div>
+        <button
+          type="button"
+          className="btn-primary btn-secondary mt-4 flex items-center justify-center gap-2"
+          onClick={() => navigate("home")}
+          data-ocid="office.cancel_button"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+      </div>
+    );
+  }
+
+  if (!actor && !actorFetching) {
+    return (
+      <div className="screen">
+        <h2 className="screen-title">Office Panel</h2>
+        <div
+          className="order-card text-center mt-4"
+          data-ocid="office.error_state"
+        >
+          <p
+            className="text-sm font-semibold mb-2"
+            style={{ color: "oklch(var(--navy-deep))" }}
+          >
+            Could not connect to network
+          </p>
+          <p
+            className="text-xs mb-3"
+            style={{ color: "oklch(var(--muted-foreground))" }}
+          >
+            Please retry the connection or go back.
+          </p>
+          <button
+            type="button"
+            className="btn-primary flex items-center justify-center gap-2"
+            onClick={() => window.location.reload()}
+            data-ocid="office.primary_button"
+          >
+            <RefreshCw className="h-4 w-4" /> Retry Connection
+          </button>
+        </div>
+        <button
+          type="button"
+          className="btn-primary btn-secondary mt-4 flex items-center justify-center gap-2"
+          onClick={() => navigate("home")}
+          data-ocid="office.cancel_button"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="screen">
+      <h2 className="screen-title">Office Panel</h2>
+
+      <div className="flex gap-2 items-center">
+        <input
+          className="form-input flex-1"
+          type="date"
+          value={filterDate}
+          onChange={(e) => setFilterDate(e.target.value)}
+          data-ocid="office.date_input"
+        />
+        <button
+          type="button"
+          className="btn-primary btn-sm"
+          style={{ width: "auto", whiteSpace: "nowrap" }}
+          onClick={handleFilter}
+          disabled={loading}
+          data-ocid="office.secondary_button"
+        >
+          {loading ? (
+            <Loader2 className="h-3 w-3 animate-spin inline" />
+          ) : (
+            <Filter className="h-3 w-3 inline" />
+          )}{" "}
+          Filter
+        </button>
+      </div>
+
+      {error && (
+        <div className="error-msg mt-2" data-ocid="office.error_state">
+          {error}
+        </div>
+      )}
+
+      {loading && (
+        <div data-ocid="office.loading_state">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      )}
+
+      {!loading && allOrders.length === 0 && !error && filterDate && (
+        <div className="empty-state" data-ocid="office.empty_state">
+          <div className="empty-state-icon">🏢</div>
+          <p>No manager-approved orders for this date.</p>
+        </div>
+      )}
+
+      {!loading && !filterDate && allOrders.length === 0 && (
+        <div className="empty-state" data-ocid="office.empty_state">
+          <div className="empty-state-icon">📅</div>
+          <p>Select a date and press Filter to view orders.</p>
+        </div>
+      )}
+
+      {!loading &&
+        orders.map((order, idx) => (
+          <OrderCard
+            key={String(order.id)}
+            order={order}
+            index={idx + 1}
+            viewerRole="office"
+            isActioning={actioningId === order.id}
+            onBillDone={() => handleBillDone(order.id)}
+          />
+        ))}
+
+      <button
+        type="button"
+        className="btn-primary btn-secondary mt-4 flex items-center justify-center gap-2"
+        onClick={() => navigate("home")}
+        data-ocid="office.cancel_button"
       >
         <LogOut className="h-4 w-4" /> Logout
       </button>

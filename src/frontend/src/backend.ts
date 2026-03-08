@@ -110,6 +110,7 @@ export interface OrderItem {
 }
 export enum OrderStatus {
     pending = "pending",
+    billDone = "billDone",
     approved = "approved",
     rejected = "rejected",
     delivered = "delivered",
@@ -414,6 +415,8 @@ function from_candid_variant_n10(_uploadFile: (file: ExternalBlob) => Promise<Ui
 function from_candid_variant_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     pending: null;
 } | {
+    billDone: null;
+} | {
     approved: null;
 } | {
     rejected: null;
@@ -422,7 +425,7 @@ function from_candid_variant_n7(_uploadFile: (file: ExternalBlob) => Promise<Uin
 } | {
     accepted: null;
 }): OrderStatus {
-    return "pending" in value ? OrderStatus.pending : "approved" in value ? OrderStatus.approved : "rejected" in value ? OrderStatus.rejected : "delivered" in value ? OrderStatus.delivered : "accepted" in value ? OrderStatus.accepted : value;
+    return "pending" in value ? OrderStatus.pending : "billDone" in value ? OrderStatus.billDone : "approved" in value ? OrderStatus.approved : "rejected" in value ? OrderStatus.rejected : "delivered" in value ? OrderStatus.delivered : "accepted" in value ? OrderStatus.accepted : value;
 }
 function from_candid_vec_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Order>): Array<Order> {
     return value.map((x)=>from_candid_Order_n4(_uploadFile, _downloadFile, x));
@@ -436,6 +439,8 @@ function to_candid_UserRole_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint
 function to_candid_variant_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: OrderStatus): {
     pending: null;
 } | {
+    billDone: null;
+} | {
     approved: null;
 } | {
     rejected: null;
@@ -446,6 +451,8 @@ function to_candid_variant_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint
 } {
     return value == OrderStatus.pending ? {
         pending: null
+    } : value == OrderStatus.billDone ? {
+        billDone: null
     } : value == OrderStatus.approved ? {
         approved: null
     } : value == OrderStatus.rejected ? {

@@ -15,6 +15,7 @@ export const UserRole = IDL.Variant({
 });
 export const OrderStatus = IDL.Variant({
   'pending' : IDL.Null,
+  'billDone' : IDL.Null,
   'approved' : IDL.Null,
   'rejected' : IDL.Null,
   'delivered' : IDL.Null,
@@ -83,6 +84,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const OrderStatus = IDL.Variant({
     'pending' : IDL.Null,
+    'billDone' : IDL.Null,
     'approved' : IDL.Null,
     'rejected' : IDL.Null,
     'delivered' : IDL.Null,

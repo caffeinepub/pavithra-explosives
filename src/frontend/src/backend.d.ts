@@ -28,6 +28,7 @@ export interface OrderItem {
 }
 export enum OrderStatus {
     pending = "pending",
+    billDone = "billDone",
     approved = "approved",
     rejected = "rejected",
     delivered = "delivered",
