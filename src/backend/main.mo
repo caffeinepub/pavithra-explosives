@@ -191,16 +191,11 @@ actor {
     orders.add(orderId, updatedOrder);
   };
 
-  // No authorization check - any caller can update items for pending orders
-  // Access is gated by password on the frontend
+  // ANY order status can have items updated (NO status restriction)
   public shared func updateOrderItems(orderId : Nat, items : [OrderItem]) : async () {
     let order = switch (orders.get(orderId)) {
       case (null) { Runtime.trap("Order not found") };
       case (?order) { order };
-    };
-
-    if (order.status != #pending) {
-      Runtime.trap("Can only update items for pending orders");
     };
 
     let updatedOrder : Order = {

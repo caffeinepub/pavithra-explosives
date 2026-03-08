@@ -8,11 +8,12 @@ import {
   LogIn,
   LogOut,
   Package2,
+  RefreshCw,
   Search,
   ShieldCheck,
   Truck,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { OrderStatus } from "./backend";
 import type { Order, OrderItem } from "./backend.d";
@@ -82,16 +83,26 @@ function SkeletonCard() {
 
 // ─── Order Card ───────────────────────────────────────────────────────────────
 
+interface EditableItemState {
+  qty: string;
+  name: string;
+}
+
 interface OrderCardProps {
   order: Order;
   index: number;
   viewerRole?: "manager" | "driver" | "blaster";
-  editableItems?: Record<string, string>;
-  onItemChange?: (name: string, qty: string) => void;
+  editableItems?: Record<string, EditableItemState>;
+  onItemChange?: (
+    originalName: string,
+    field: "name" | "qty",
+    value: string,
+  ) => void;
   onApprove?: () => void;
   onReject?: () => void;
   onAccept?: () => void;
   onDelivered?: () => void;
+  onSaveItems?: () => void;
   isActioning?: boolean;
 }
 
@@ -105,6 +116,7 @@ function OrderCard({
   onReject,
   onAccept,
   onDelivered,
+  onSaveItems,
   isActioning,
 }: OrderCardProps) {
   const cardOcid = `${viewerRole ?? "blaster"}.item.${index}`;
@@ -147,15 +159,26 @@ function OrderCard({
         <tbody>
           {order.items.map((item) => (
             <tr key={item.name}>
-              <td style={{ textAlign: "left", paddingLeft: 6 }}>{item.name}</td>
-              <td>
-                {viewerRole === "manager" &&
-                order.status === OrderStatus.pending &&
-                editableItems &&
-                onItemChange ? (
+              <td style={{ textAlign: "left", paddingLeft: 6 }}>
+                {viewerRole === "manager" && editableItems && onItemChange ? (
                   <input
-                    value={editableItems[item.name] ?? item.qty}
-                    onChange={(e) => onItemChange(item.name, e.target.value)}
+                    value={editableItems[item.name]?.name ?? item.name}
+                    onChange={(e) =>
+                      onItemChange(item.name, "name", e.target.value)
+                    }
+                    style={{ width: 120 }}
+                  />
+                ) : (
+                  item.name
+                )}
+              </td>
+              <td>
+                {viewerRole === "manager" && editableItems && onItemChange ? (
+                  <input
+                    value={editableItems[item.name]?.qty ?? item.qty}
+                    onChange={(e) =>
+                      onItemChange(item.name, "qty", e.target.value)
+                    }
                     style={{ width: 60 }}
                   />
                 ) : (
@@ -193,6 +216,24 @@ function OrderCard({
           </button>
         </div>
       )}
+
+      {/* Manager save items for non-pending orders */}
+      {viewerRole === "manager" &&
+        order.status !== OrderStatus.pending &&
+        onSaveItems && (
+          <button
+            type="button"
+            className="btn-primary btn-sm mt-3"
+            onClick={onSaveItems}
+            disabled={isActioning}
+            data-ocid={`manager.save_button.${index}`}
+          >
+            {isActioning ? (
+              <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
+            ) : null}
+            Save Changes
+          </button>
+        )}
 
       {/* Driver actions */}
       {viewerRole === "driver" && order.status === OrderStatus.approved && (
@@ -365,14 +406,7 @@ interface IndentScreenProps extends ActorProps {
   isLoggingIn: boolean;
 }
 
-function IndentScreen({
-  navigate,
-  actor,
-  actorFetching,
-  identity,
-  login,
-  isLoggingIn,
-}: IndentScreenProps) {
+function IndentScreen({ navigate, actor, actorFetching }: IndentScreenProps) {
   const [quarry, setQuarry] = useState("");
   const [address, setAddress] = useState("");
   const [blaster, setBlaster] = useState("");
@@ -402,8 +436,10 @@ function IndentScreen({
       return;
     }
 
-    if (!actor || actorFetching) {
-      setError("Connecting to network. Please wait...");
+    if (!actor) {
+      setError(
+        "Still connecting to network. Please wait a moment and try again.",
+      );
       return;
     }
 
@@ -413,6 +449,7 @@ function IndentScreen({
     }));
 
     setLoading(true);
+
     try {
       await actor.submitOrder(
         quarry.trim(),
@@ -436,7 +473,8 @@ function IndentScreen({
       const msg = err instanceof Error ? err.message : String(err);
       if (
         msg.toLowerCase().includes("1 order") ||
-        msg.toLowerCase().includes("per blaster")
+        msg.toLowerCase().includes("per blaster") ||
+        msg.toLowerCase().includes("active order")
       ) {
         setError("Only 1 order allowed per blaster per day");
       } else if (
@@ -444,6 +482,11 @@ function IndentScreen({
         msg.toLowerCase().includes("already")
       ) {
         setError("Only 1 order allowed per blaster per day");
+      } else if (
+        msg.toLowerCase().includes("unauthorized") ||
+        msg.toLowerCase().includes("only users")
+      ) {
+        setError("Please refresh the page and try again.");
       } else {
         setError("Failed to submit order. Please try again.");
       }
@@ -452,45 +495,26 @@ function IndentScreen({
     }
   };
 
-  // Not logged in — show login prompt
-  if (!identity) {
+  // Show loading while connecting
+  if (actorFetching && !actor) {
     return (
       <div className="screen">
         <h2 className="screen-title">Explosive Indent</h2>
-
-        <div className="order-card text-center mt-4">
-          <LogIn
-            className="h-10 w-10 mx-auto mb-3"
+        <div
+          className="order-card text-center mt-4"
+          data-ocid="indent.loading_state"
+        >
+          <Loader2
+            className="h-8 w-8 animate-spin mx-auto mb-3"
             style={{ color: "oklch(var(--navy))" }}
           />
           <p
-            className="text-sm mb-1 font-semibold"
-            style={{ color: "oklch(var(--navy-deep))" }}
-          >
-            Login required to submit
-          </p>
-          <p
-            className="text-xs mb-4"
+            className="text-sm"
             style={{ color: "oklch(var(--muted-foreground))" }}
           >
-            Please login to submit an explosive indent order.
+            Connecting to network...
           </p>
-          <button
-            type="button"
-            className="btn-primary flex items-center justify-center gap-2"
-            onClick={login}
-            disabled={isLoggingIn}
-            data-ocid="indent.primary_button"
-          >
-            {isLoggingIn ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <LogIn className="h-4 w-4" />
-            )}
-            {isLoggingIn ? "Logging in..." : "Login"}
-          </button>
         </div>
-
         <button
           type="button"
           className="btn-primary btn-secondary mt-3"
@@ -505,7 +529,51 @@ function IndentScreen({
     );
   }
 
-  // Logged in — show full form
+  // Actor failed to load — show retry
+  if (!actor && !actorFetching) {
+    return (
+      <div className="screen">
+        <h2 className="screen-title">Explosive Indent</h2>
+        <div
+          className="order-card text-center mt-4"
+          data-ocid="indent.error_state"
+        >
+          <p
+            className="text-sm font-semibold mb-2"
+            style={{ color: "oklch(var(--navy-deep))" }}
+          >
+            Could not connect to network
+          </p>
+          <p
+            className="text-xs mb-3"
+            style={{ color: "oklch(var(--muted-foreground))" }}
+          >
+            Please retry the connection or go back.
+          </p>
+          <button
+            type="button"
+            className="btn-primary flex items-center justify-center gap-2"
+            onClick={() => window.location.reload()}
+            data-ocid="indent.primary_button"
+          >
+            <RefreshCw className="h-4 w-4" /> Retry Connection
+          </button>
+        </div>
+        <button
+          type="button"
+          className="btn-primary btn-secondary mt-3"
+          onClick={() => navigate("home")}
+          data-ocid="indent.cancel_button"
+        >
+          <span className="flex items-center justify-center gap-2">
+            <ArrowLeft className="h-4 w-4" /> Back
+          </span>
+        </button>
+      </div>
+    );
+  }
+
+  // Show full form (no login required)
   return (
     <div className="screen">
       <h2 className="screen-title">Explosive Indent</h2>
@@ -607,12 +675,16 @@ function IndentScreen({
         type="button"
         className="btn-primary mt-3"
         onClick={handleSubmit}
-        disabled={loading || actorFetching}
+        disabled={loading || !actor}
         data-ocid="indent.submit_button"
       >
         {loading ? (
           <span className="flex items-center justify-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" /> Submitting...
+          </span>
+        ) : !actor ? (
+          <span className="flex items-center justify-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" /> Connecting...
           </span>
         ) : (
           "Submit"
@@ -922,36 +994,34 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
   const [actioningId, setActioningId] = useState<bigint | null>(null);
   const [error, setError] = useState("");
 
-  const fetchOrders = useCallback(async () => {
-    if (!actor || actorFetching) return;
-    setLoading(true);
-    setError("");
-    try {
-      const all = await actor.getAllOrders();
-      setAllOrders(all);
-    } catch {
-      setError("Failed to load orders. Please try again.");
-      setAllOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [actor, actorFetching]);
-
-  // Load whenever actor becomes available
-  useEffect(() => {
-    if (actor && !actorFetching) {
-      fetchOrders();
-    }
-  }, [actor, actorFetching, fetchOrders]);
+  const fetchOrders = useCallback(
+    async (date: string) => {
+      if (!actor) {
+        setError("Network not ready. Please refresh and try again.");
+        return;
+      }
+      setLoading(true);
+      setError("");
+      try {
+        const all = await actor.getAllOrders();
+        setAllOrders(all.filter((o) => o.date === date));
+      } catch {
+        setError("Failed to load orders. Please try again.");
+        setAllOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [actor],
+  );
 
   // Derived filtered orders — no useEffect needed
   const orders = allOrders.filter((o) => {
-    const statusOk =
+    return (
       o.status === OrderStatus.approved ||
       o.status === OrderStatus.accepted ||
-      o.status === OrderStatus.delivered;
-    const dateOk = filterDate ? o.date === filterDate : true;
-    return statusOk && dateOk;
+      o.status === OrderStatus.delivered
+    );
   });
 
   const handleAccept = async (orderId: bigint) => {
@@ -960,7 +1030,7 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
     try {
       await actor.updateOrderStatus(orderId, OrderStatus.accepted);
       toast.success("Order accepted.");
-      await fetchOrders();
+      await fetchOrders(filterDate);
     } catch {
       toast.error("Failed to update order.");
     } finally {
@@ -974,13 +1044,95 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
     try {
       await actor.updateOrderStatus(orderId, OrderStatus.delivered);
       toast.success("Order marked as delivered.");
-      await fetchOrders();
+      await fetchOrders(filterDate);
     } catch {
       toast.error("Failed to update order.");
     } finally {
       setActioningId(null);
     }
   };
+
+  const handleFilter = () => {
+    if (!filterDate) {
+      setError("Please select a date to filter orders.");
+      return;
+    }
+    setError("");
+    fetchOrders(filterDate);
+  };
+
+  // Show connecting spinner only while actorFetching and not yet timed out
+  if (actorFetching && !actor) {
+    return (
+      <div className="screen">
+        <h2 className="screen-title">Driver Orders</h2>
+        <div
+          className="order-card text-center mt-4"
+          data-ocid="driver.loading_state"
+        >
+          <Loader2
+            className="h-8 w-8 animate-spin mx-auto mb-3"
+            style={{ color: "oklch(var(--navy))" }}
+          />
+          <p
+            className="text-sm"
+            style={{ color: "oklch(var(--muted-foreground))" }}
+          >
+            Connecting to network...
+          </p>
+        </div>
+        <button
+          type="button"
+          className="btn-primary btn-secondary mt-4 flex items-center justify-center gap-2"
+          onClick={() => navigate("home")}
+          data-ocid="driver.cancel_button"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+      </div>
+    );
+  }
+
+  if (!actor && !actorFetching) {
+    return (
+      <div className="screen">
+        <h2 className="screen-title">Driver Orders</h2>
+        <div
+          className="order-card text-center mt-4"
+          data-ocid="driver.error_state"
+        >
+          <p
+            className="text-sm font-semibold mb-2"
+            style={{ color: "oklch(var(--navy-deep))" }}
+          >
+            Could not connect to network
+          </p>
+          <p
+            className="text-xs mb-3"
+            style={{ color: "oklch(var(--muted-foreground))" }}
+          >
+            Please retry the connection or go back.
+          </p>
+          <button
+            type="button"
+            className="btn-primary flex items-center justify-center gap-2"
+            onClick={() => window.location.reload()}
+            data-ocid="driver.primary_button"
+          >
+            <RefreshCw className="h-4 w-4" /> Retry Connection
+          </button>
+        </div>
+        <button
+          type="button"
+          className="btn-primary btn-secondary mt-4 flex items-center justify-center gap-2"
+          onClick={() => navigate("home")}
+          data-ocid="driver.cancel_button"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="screen">
@@ -998,7 +1150,7 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
           type="button"
           className="btn-primary btn-sm"
           style={{ width: "auto", whiteSpace: "nowrap" }}
-          onClick={fetchOrders}
+          onClick={handleFilter}
           disabled={loading}
           data-ocid="driver.secondary_button"
         >
@@ -1024,10 +1176,17 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
         </div>
       )}
 
-      {!loading && !error && orders.length === 0 && (
+      {!loading && allOrders.length === 0 && !error && filterDate && (
         <div className="empty-state" data-ocid="driver.empty_state">
           <div className="empty-state-icon">🚛</div>
-          <p>No approved orders to display.</p>
+          <p>No approved orders for this date.</p>
+        </div>
+      )}
+
+      {!loading && !filterDate && allOrders.length === 0 && (
+        <div className="empty-state" data-ocid="driver.empty_state">
+          <div className="empty-state-icon">📅</div>
+          <p>Select a date and press Filter to view orders.</p>
         </div>
       )}
 
@@ -1139,54 +1298,61 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
   const [loading, setLoading] = useState(false);
   const [actioningId, setActioningId] = useState<bigint | null>(null);
   const [editableItems, setEditableItems] = useState<
-    Record<string, Record<string, string>>
+    Record<string, Record<string, EditableItemState>>
   >({});
   const [error, setError] = useState("");
 
-  const fetchOrders = useCallback(async () => {
-    if (!actor || actorFetching) return;
-    setLoading(true);
-    setError("");
-    try {
-      const all = await actor.getAllOrders();
-      setAllOrders(all);
+  const fetchOrders = useCallback(
+    async (date: string) => {
+      if (!actor) {
+        setError("Network not ready. Please refresh and try again.");
+        return;
+      }
+      setLoading(true);
+      setError("");
+      try {
+        const all = await actor.getAllOrders();
+        const filtered = all.filter((o) => o.date === date);
+        setAllOrders(filtered);
 
-      // Initialize editable items for pending orders
-      const initial: Record<string, Record<string, string>> = {};
-      for (const o of all) {
-        if (o.status === OrderStatus.pending) {
-          const itemMap: Record<string, string> = {};
+        // Initialize editable items for all orders
+        const initial: Record<string, Record<string, EditableItemState>> = {};
+        for (const o of filtered) {
+          const itemMap: Record<string, EditableItemState> = {};
           for (const item of o.items) {
-            itemMap[item.name] = item.qty;
+            itemMap[item.name] = { qty: item.qty, name: item.name };
           }
           initial[String(o.id)] = itemMap;
         }
+        setEditableItems(initial);
+      } catch {
+        setError("Failed to load orders. Please try again.");
+        setAllOrders([]);
+      } finally {
+        setLoading(false);
       }
-      setEditableItems(initial);
-    } catch {
-      setError("Failed to load orders. Please try again.");
-      setAllOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [actor, actorFetching]);
+    },
+    [actor],
+  );
 
-  // Load whenever actor becomes available
-  useEffect(() => {
-    if (actor && !actorFetching) {
-      fetchOrders();
-    }
-  }, [actor, actorFetching, fetchOrders]);
+  // Derived orders — already filtered by date in fetchOrders
+  const orders = allOrders;
 
-  // Derived filtered orders — no useEffect needed
-  const orders = filterDate
-    ? allOrders.filter((o) => o.date === filterDate)
-    : allOrders;
-
-  const handleItemChange = (orderId: string, name: string, qty: string) => {
+  const handleItemChange = (
+    orderId: string,
+    originalName: string,
+    field: "name" | "qty",
+    value: string,
+  ) => {
     setEditableItems((prev) => ({
       ...prev,
-      [orderId]: { ...(prev[orderId] ?? {}), [name]: qty },
+      [orderId]: {
+        ...(prev[orderId] ?? {}),
+        [originalName]: {
+          ...(prev[orderId]?.[originalName] ?? { name: originalName, qty: "" }),
+          [field]: value,
+        },
+      },
     }));
   };
 
@@ -1196,13 +1362,13 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
     setActioningId(order.id);
     try {
       const updatedItems: OrderItem[] = order.items.map((item) => ({
-        name: item.name,
-        qty: editableItems[oid]?.[item.name] ?? item.qty,
+        name: editableItems[oid]?.[item.name]?.name ?? item.name,
+        qty: editableItems[oid]?.[item.name]?.qty ?? item.qty,
       }));
       await actor.updateOrderItems(order.id, updatedItems);
       await actor.updateOrderStatus(order.id, OrderStatus.approved);
       toast.success("Order approved.");
-      await fetchOrders();
+      await fetchOrders(filterDate);
     } catch {
       toast.error("Failed to approve order.");
     } finally {
@@ -1216,13 +1382,114 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
     try {
       await actor.updateOrderStatus(orderId, OrderStatus.rejected);
       toast.success("Order rejected.");
-      await fetchOrders();
+      await fetchOrders(filterDate);
     } catch {
       toast.error("Failed to reject order.");
     } finally {
       setActioningId(null);
     }
   };
+
+  const handleSaveItems = async (order: Order) => {
+    if (!actor) return;
+    const oid = String(order.id);
+    setActioningId(order.id);
+    try {
+      const updatedItems: OrderItem[] = order.items.map((item) => ({
+        name: editableItems[oid]?.[item.name]?.name ?? item.name,
+        qty: editableItems[oid]?.[item.name]?.qty ?? item.qty,
+      }));
+      await actor.updateOrderItems(order.id, updatedItems);
+      toast.success("Items updated.");
+      await fetchOrders(filterDate);
+    } catch {
+      toast.error("Failed to save changes.");
+    } finally {
+      setActioningId(null);
+    }
+  };
+
+  const handleFilter = () => {
+    if (!filterDate) {
+      setError("Please select a date to filter orders.");
+      return;
+    }
+    setError("");
+    fetchOrders(filterDate);
+  };
+
+  // Show connecting spinner while actor is loading
+  if (actorFetching && !actor) {
+    return (
+      <div className="screen">
+        <h2 className="screen-title">Manager Approval</h2>
+        <div
+          className="order-card text-center mt-4"
+          data-ocid="manager.loading_state"
+        >
+          <Loader2
+            className="h-8 w-8 animate-spin mx-auto mb-3"
+            style={{ color: "oklch(var(--navy))" }}
+          />
+          <p
+            className="text-sm"
+            style={{ color: "oklch(var(--muted-foreground))" }}
+          >
+            Connecting to network...
+          </p>
+        </div>
+        <button
+          type="button"
+          className="btn-primary btn-secondary mt-4 flex items-center justify-center gap-2"
+          onClick={() => navigate("home")}
+          data-ocid="manager.cancel_button"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+      </div>
+    );
+  }
+
+  if (!actor && !actorFetching) {
+    return (
+      <div className="screen">
+        <h2 className="screen-title">Manager Approval</h2>
+        <div
+          className="order-card text-center mt-4"
+          data-ocid="manager.error_state"
+        >
+          <p
+            className="text-sm font-semibold mb-2"
+            style={{ color: "oklch(var(--navy-deep))" }}
+          >
+            Could not connect to network
+          </p>
+          <p
+            className="text-xs mb-3"
+            style={{ color: "oklch(var(--muted-foreground))" }}
+          >
+            Please retry the connection or go back.
+          </p>
+          <button
+            type="button"
+            className="btn-primary flex items-center justify-center gap-2"
+            onClick={() => window.location.reload()}
+            data-ocid="manager.primary_button"
+          >
+            <RefreshCw className="h-4 w-4" /> Retry Connection
+          </button>
+        </div>
+        <button
+          type="button"
+          className="btn-primary btn-secondary mt-4 flex items-center justify-center gap-2"
+          onClick={() => navigate("home")}
+          data-ocid="manager.cancel_button"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="screen">
@@ -1240,7 +1507,7 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
           type="button"
           className="btn-primary btn-sm"
           style={{ width: "auto", whiteSpace: "nowrap" }}
-          onClick={fetchOrders}
+          onClick={handleFilter}
           disabled={loading}
           data-ocid="manager.secondary_button"
         >
@@ -1267,10 +1534,17 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
         </div>
       )}
 
-      {!loading && !error && orders.length === 0 && (
+      {!loading && allOrders.length === 0 && !error && filterDate && (
         <div className="empty-state" data-ocid="manager.empty_state">
           <div className="empty-state-icon">📊</div>
-          <p>No orders to display.</p>
+          <p>No orders for this date.</p>
+        </div>
+      )}
+
+      {!loading && !filterDate && allOrders.length === 0 && (
+        <div className="empty-state" data-ocid="manager.empty_state">
+          <div className="empty-state-icon">📅</div>
+          <p>Select a date and press Filter to view orders.</p>
         </div>
       )}
 
@@ -1282,12 +1556,13 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
             index={idx + 1}
             viewerRole="manager"
             editableItems={editableItems[String(order.id)]}
-            onItemChange={(name, qty) =>
-              handleItemChange(String(order.id), name, qty)
+            onItemChange={(originalName, field, value) =>
+              handleItemChange(String(order.id), originalName, field, value)
             }
             isActioning={actioningId === order.id}
             onApprove={() => handleApprove(order)}
             onReject={() => handleReject(order.id)}
+            onSaveItems={() => handleSaveItems(order)}
           />
         ))}
 
