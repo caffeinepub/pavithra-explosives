@@ -40,9 +40,16 @@ actor {
     userProfiles.add(caller, profile);
   };
 
+  // OrderItem does NOT include amount — amount stored separately to avoid migration issues
   type OrderItem = {
     name : Text;
     qty : Text;
+  };
+
+  // Item amount stored in separate stable map to avoid migration compatibility issues
+  type ItemAmount = {
+    name : Text;
+    amount : Text;
   };
 
   // Updated OrderStatus type with billDone
@@ -68,8 +75,16 @@ actor {
     createdAt : Int;
   };
 
+  type OrderWithAmounts = {
+    order : Order;
+    amounts : [ItemAmount];
+  };
+
   let orders = Map.empty<Nat, Order>();
   var nextOrderId = 1;
+
+  // Separate stable map for item amounts — new variable, no migration needed
+  let orderAmounts = Map.empty<Nat, [ItemAmount]>();
 
   // Custom role types for manager and driver
   let managerRole = Map.empty<Principal, Bool>();
@@ -168,6 +183,28 @@ actor {
   // Access is gated by password on the frontend (driver123 / manager123)
   public query func getAllOrders() : async [Order] {
     orders.values().toArray();
+  };
+
+  // Returns orders with their item amounts merged — for manager and office panels
+  public query func getAllOrdersWithAmounts() : async [OrderWithAmounts] {
+    orders.values().toArray().map(
+      func(order : Order) : OrderWithAmounts {
+        let amounts = switch (orderAmounts.get(order.id)) {
+          case (?a) { a };
+          case (null) { [] };
+        };
+        { order; amounts };
+      }
+    );
+  };
+
+  // Save item amounts for an order (manager only, no auth — gated by frontend password)
+  public shared func updateItemAmounts(orderId : Nat, amounts : [ItemAmount]) : async () {
+    let _ = switch (orders.get(orderId)) {
+      case (null) { Runtime.trap("Order not found") };
+      case (?o) { o };
+    };
+    orderAmounts.add(orderId, amounts);
   };
 
   // No authorization check - any caller can update status

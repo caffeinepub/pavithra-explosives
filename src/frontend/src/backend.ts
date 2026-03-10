@@ -108,6 +108,14 @@ export interface OrderItem {
     qty: string;
     name: string;
 }
+export interface ItemAmount {
+    name: string;
+    amount: string;
+}
+export interface OrderWithAmounts {
+    order: Order;
+    amounts: Array<ItemAmount>;
+}
 export enum OrderStatus {
     pending = "pending",
     billDone = "billDone",
@@ -135,6 +143,8 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     submitOrder(quarry: string, address: string, blaster: string, lease: string, dgms: string, date: string, items: Array<OrderItem>): Promise<bigint>;
+    getAllOrdersWithAmounts(): Promise<Array<OrderWithAmounts>>;
+    updateItemAmounts(orderId: bigint, amounts: Array<ItemAmount>): Promise<void>;
     updateOrderItems(orderId: bigint, items: Array<OrderItem>): Promise<void>;
     updateOrderStatus(orderId: bigint, newStatus: OrderStatus): Promise<void>;
 }
@@ -348,6 +358,40 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.updateOrderStatus(arg0, to_candid_OrderStatus_n12(this._uploadFile, this._downloadFile, arg1));
+            return result;
+        }
+    }
+    async getAllOrdersWithAmounts(): Promise<Array<OrderWithAmounts>> {
+        if (this.processError) {
+            try {
+                const raw = await this.actor.getAllOrdersWithAmounts();
+                return raw.map((item) => ({
+                    order: from_candid_Order_n4(this._uploadFile, this._downloadFile, item.order),
+                    amounts: item.amounts,
+                }));
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const raw = await this.actor.getAllOrdersWithAmounts();
+            return raw.map((item) => ({
+                order: from_candid_Order_n4(this._uploadFile, this._downloadFile, item.order),
+                amounts: item.amounts,
+            }));
+        }
+    }
+    async updateItemAmounts(arg0: bigint, arg1: Array<ItemAmount>): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateItemAmounts(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateItemAmounts(arg0, arg1);
             return result;
         }
     }

@@ -18,7 +18,12 @@ import {
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { OrderStatus } from "./backend";
-import type { Order, OrderItem } from "./backend.d";
+import type {
+  ItemAmount,
+  Order,
+  OrderItem,
+  OrderWithAmounts,
+} from "./backend.d";
 import { useActor } from "./hooks/useActor";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 
@@ -96,6 +101,7 @@ function SkeletonCard() {
 interface EditableItemState {
   qty: string;
   name: string;
+  amount: string;
 }
 
 interface OrderCardProps {
@@ -103,9 +109,11 @@ interface OrderCardProps {
   index: number;
   viewerRole?: "manager" | "driver" | "blaster" | "office";
   editableItems?: Record<string, EditableItemState>;
+  /** For office panel: map of itemName -> amount (read-only) */
+  orderAmountsMap?: Record<string, string>;
   onItemChange?: (
     originalName: string,
-    field: "name" | "qty",
+    field: "name" | "qty" | "amount",
     value: string,
   ) => void;
   onApprove?: () => void;
@@ -122,6 +130,7 @@ function OrderCard({
   index,
   viewerRole,
   editableItems,
+  orderAmountsMap,
   onItemChange,
   onApprove,
   onReject,
@@ -166,6 +175,9 @@ function OrderCard({
           <tr>
             <th style={{ textAlign: "left", paddingLeft: 6 }}>Item</th>
             <th>Qty</th>
+            {(viewerRole === "manager" || viewerRole === "office") && (
+              <th>Amount</th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -197,6 +209,21 @@ function OrderCard({
                   item.qty || "—"
                 )}
               </td>
+              {(viewerRole === "manager" || viewerRole === "office") && (
+                <td>
+                  {viewerRole === "manager" && editableItems && onItemChange ? (
+                    <input
+                      value={editableItems[item.name]?.amount ?? ""}
+                      onChange={(e) =>
+                        onItemChange(item.name, "amount", e.target.value)
+                      }
+                      style={{ width: 70 }}
+                    />
+                  ) : (
+                    orderAmountsMap?.[item.name] || "—"
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -1359,16 +1386,25 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
       setLoading(true);
       setError("");
       try {
-        const all = await actor.getAllOrders();
-        const filtered = all.filter((o) => o.date === date);
-        setAllOrders(filtered);
+        const all = await actor.getAllOrdersWithAmounts();
+        const filtered = all.filter((owa) => owa.order.date === date);
+        setAllOrders(filtered.map((owa) => owa.order));
 
-        // Initialize editable items for all orders
+        // Initialize editable items for all orders (with amounts from separate map)
         const initial: Record<string, Record<string, EditableItemState>> = {};
-        for (const o of filtered) {
+        for (const owa of filtered) {
+          const o = owa.order;
+          const amountsMap: Record<string, string> = {};
+          for (const ia of owa.amounts) {
+            amountsMap[ia.name] = ia.amount;
+          }
           const itemMap: Record<string, EditableItemState> = {};
           for (const item of o.items) {
-            itemMap[item.name] = { qty: item.qty, name: item.name };
+            itemMap[item.name] = {
+              qty: item.qty,
+              name: item.name,
+              amount: amountsMap[item.name] ?? "",
+            };
           }
           initial[String(o.id)] = itemMap;
         }
@@ -1389,7 +1425,7 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
   const handleItemChange = (
     orderId: string,
     originalName: string,
-    field: "name" | "qty",
+    field: "name" | "qty" | "amount",
     value: string,
   ) => {
     setEditableItems((prev) => ({
@@ -1413,7 +1449,12 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
         name: editableItems[oid]?.[item.name]?.name ?? item.name,
         qty: editableItems[oid]?.[item.name]?.qty ?? item.qty,
       }));
+      const updatedAmounts: ItemAmount[] = order.items.map((item) => ({
+        name: editableItems[oid]?.[item.name]?.name ?? item.name,
+        amount: editableItems[oid]?.[item.name]?.amount ?? "",
+      }));
       await actor.updateOrderItems(order.id, updatedItems);
+      await actor.updateItemAmounts(order.id, updatedAmounts);
       await actor.updateOrderStatus(order.id, OrderStatus.approved);
       toast.success("Order approved.");
       await fetchOrders(filterDate);
@@ -1447,7 +1488,12 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
         name: editableItems[oid]?.[item.name]?.name ?? item.name,
         qty: editableItems[oid]?.[item.name]?.qty ?? item.qty,
       }));
+      const updatedAmounts: ItemAmount[] = order.items.map((item) => ({
+        name: editableItems[oid]?.[item.name]?.name ?? item.name,
+        amount: editableItems[oid]?.[item.name]?.amount ?? "",
+      }));
       await actor.updateOrderItems(order.id, updatedItems);
+      await actor.updateItemAmounts(order.id, updatedAmounts);
       toast.success("Items updated.");
       await fetchOrders(filterDate);
     } catch {
@@ -1706,6 +1752,9 @@ function OfficeLoginScreen({ navigate }: { navigate: (s: Screen) => void }) {
 function OfficeViewScreen({ navigate, actor, actorFetching }: ActorProps) {
   const [filterDate, setFilterDate] = useState("");
   const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const [officeAmounts, setOfficeAmounts] = useState<
+    Record<string, Record<string, string>>
+  >({});
   const [loading, setLoading] = useState(false);
   const [actioningId, setActioningId] = useState<bigint | null>(null);
   const [error, setError] = useState("");
@@ -1719,8 +1768,19 @@ function OfficeViewScreen({ navigate, actor, actorFetching }: ActorProps) {
       setLoading(true);
       setError("");
       try {
-        const all = await actor.getAllOrders();
-        setAllOrders(all.filter((o) => o.date === date));
+        const all = await actor.getAllOrdersWithAmounts();
+        const filtered = all.filter((owa) => owa.order.date === date);
+        setAllOrders(filtered.map((owa) => owa.order));
+        // Store amounts for display in office panel
+        const amts: Record<string, Record<string, string>> = {};
+        for (const owa of filtered) {
+          const m: Record<string, string> = {};
+          for (const ia of owa.amounts) {
+            m[ia.name] = ia.amount;
+          }
+          amts[String(owa.order.id)] = m;
+        }
+        setOfficeAmounts(amts);
       } catch {
         setError("Failed to load orders. Please try again.");
         setAllOrders([]);
@@ -1900,6 +1960,7 @@ function OfficeViewScreen({ navigate, actor, actorFetching }: ActorProps) {
             order={order}
             index={idx + 1}
             viewerRole="office"
+            orderAmountsMap={officeAmounts[String(order.id)] ?? {}}
             isActioning={actioningId === order.id}
             onBillDone={() => handleBillDone(order.id)}
           />

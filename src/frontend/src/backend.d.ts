@@ -26,6 +26,14 @@ export interface OrderItem {
     qty: string;
     name: string;
 }
+export interface ItemAmount {
+    name: string;
+    amount: string;
+}
+export interface OrderWithAmounts {
+    order: Order;
+    amounts: Array<ItemAmount>;
+}
 export enum OrderStatus {
     pending = "pending",
     billDone = "billDone",
@@ -44,6 +52,7 @@ export interface backendInterface {
     assignDriverRole(user: Principal): Promise<void>;
     assignManagerRole(user: Principal): Promise<void>;
     getAllOrders(): Promise<Array<Order>>;
+    getAllOrdersWithAmounts(): Promise<Array<OrderWithAmounts>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getOrderById(orderId: bigint): Promise<Order | null>;
@@ -52,6 +61,7 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     submitOrder(quarry: string, address: string, blaster: string, lease: string, dgms: string, date: string, items: Array<OrderItem>): Promise<bigint>;
+    updateItemAmounts(orderId: bigint, amounts: Array<ItemAmount>): Promise<void>;
     updateOrderItems(orderId: bigint, items: Array<OrderItem>): Promise<void>;
     updateOrderStatus(orderId: bigint, newStatus: OrderStatus): Promise<void>;
 }
