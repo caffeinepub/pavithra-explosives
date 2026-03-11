@@ -78,6 +78,7 @@ actor {
   type OrderWithAmounts = {
     order : Order;
     amounts : [ItemAmount];
+    driverName : Text;
   };
 
   let orders = Map.empty<Nat, Order>();
@@ -188,7 +189,7 @@ actor {
     orders.values().toArray();
   };
 
-  // Returns orders with their item amounts merged — for manager and office panels
+  // Returns orders with their item amounts and driver name — for manager and office panels
   public query func getAllOrdersWithAmounts() : async [OrderWithAmounts] {
     orders.values().toArray().map(
       func(order : Order) : OrderWithAmounts {
@@ -196,7 +197,11 @@ actor {
           case (?a) { a };
           case (null) { [] };
         };
-        { order; amounts };
+        let driverName = switch (orderDriverNames.get(order.id)) {
+          case (?n) { n };
+          case (null) { "" };
+        };
+        { order; amounts; driverName };
       }
     );
   };

@@ -115,6 +115,7 @@ export interface ItemAmount {
 export interface OrderWithAmounts {
     order: Order;
     amounts: Array<ItemAmount>;
+    driverName: string;
 }
 export enum OrderStatus {
     pending = "pending",
@@ -370,6 +371,7 @@ export class Backend implements backendInterface {
                 return raw.map((item) => ({
                     order: from_candid_Order_n4(this._uploadFile, this._downloadFile, item.order),
                     amounts: item.amounts,
+                    driverName: item.driverName ?? '',
                 }));
             } catch (e) {
                 this.processError(e);
@@ -380,6 +382,7 @@ export class Backend implements backendInterface {
             return raw.map((item) => ({
                 order: from_candid_Order_n4(this._uploadFile, this._downloadFile, item.order),
                 amounts: item.amounts,
+                driverName: item.driverName ?? '',
             }));
         }
     }

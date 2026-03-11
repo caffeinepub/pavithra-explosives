@@ -33,6 +33,7 @@ export interface ItemAmount {
 export interface OrderWithAmounts {
     order: Order;
     amounts: Array<ItemAmount>;
+    driverName: string;
 }
 export enum OrderStatus {
     pending = "pending",

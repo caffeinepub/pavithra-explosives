@@ -27,6 +27,7 @@ export interface OrderItem { 'qty' : string, 'name' : string }
 export interface OrderWithAmounts {
   'order' : Order,
   'amounts' : Array<ItemAmount>,
+  'driverName' : string,
 }
 export type OrderStatus = { 'pending' : null } |
   { 'billDone' : null } |

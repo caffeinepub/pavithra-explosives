@@ -156,37 +156,67 @@ function OrderCard({
 
   return (
     <div className="order-card" data-ocid={cardOcid}>
-      <div className="order-card-field">
-        <span className="order-card-label">Quarry:</span>
-        <span className="order-card-value">{order.quarry}</span>
-      </div>
-      <div className="order-card-field">
-        <span className="order-card-label">Address:</span>
-        <span className="order-card-value">{order.address}</span>
-      </div>
-      <div className="order-card-field">
-        <span className="order-card-label">Blaster:</span>
-        <span className="order-card-value">{order.blaster}</span>
-      </div>
-      <div className="order-card-field">
-        <span className="order-card-label">Lease No:</span>
-        <span className="order-card-value">{order.lease}</span>
-      </div>
-      <div className="order-card-field">
-        <span className="order-card-label">DGMS:</span>
-        <span className="order-card-value">{order.dgms}</span>
-      </div>
-      {driverNamesMap?.[String(order.id)] && (
-        <div className="order-card-field">
-          <span className="order-card-label">Driver:</span>
-          <span className="order-card-value">
-            {driverNamesMap[String(order.id)]}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: 4,
+        }}
+      >
+        <div style={{ flex: 1 }}>
+          <div className="order-card-field">
+            <span className="order-card-label">Quarry:</span>
+            <span className="order-card-value">{order.quarry}</span>
+          </div>
+          <div className="order-card-field">
+            <span className="order-card-label">Address:</span>
+            <span className="order-card-value">{order.address}</span>
+          </div>
+          <div className="order-card-field">
+            <span className="order-card-label">Lease No:</span>
+            <span className="order-card-value">{order.lease}</span>
+          </div>
+          <div className="order-card-field">
+            <span className="order-card-label">DGMS:</span>
+            <span className="order-card-value">{order.dgms}</span>
+          </div>
+          <div
+            className="order-card-field"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <span>
+              <span className="order-card-label">Date:</span>
+              <span className="order-card-value">{order.date}</span>
+            </span>
+            {driverNamesMap?.[String(order.id)] && (
+              <span style={{ textAlign: "right" }}>
+                <span className="order-card-label">Driver: </span>
+                <span className="order-card-value" style={{ fontWeight: 700 }}>
+                  {driverNamesMap[String(order.id)]}
+                </span>
+              </span>
+            )}
+          </div>
+        </div>
+        <div style={{ textAlign: "right", marginLeft: 12, flexShrink: 0 }}>
+          <span
+            className="order-card-label"
+            style={{ display: "block", marginBottom: 2 }}
+          >
+            Blaster
+          </span>
+          <span
+            className="order-card-value"
+            style={{ fontWeight: 700, fontSize: "0.97em" }}
+          >
+            {order.blaster}
           </span>
         </div>
-      )}
-      <div className="order-card-field">
-        <span className="order-card-label">Date:</span>
-        <span className="order-card-value">{order.date}</span>
       </div>
       <StatusBadge status={order.status} />
 
@@ -924,17 +954,15 @@ function BlasterViewScreen({
       );
       setOrders(results);
       setSearched(true);
-      // Fetch driver names (public query)
-      try {
-        const driverNamesRaw = await actor.getAllDriverNames();
-        const dnMap: Record<string, string> = {};
-        for (const [id, name] of driverNamesRaw) {
-          dnMap[String(id)] = name;
-        }
-        setDriverNamesMap(dnMap);
-      } catch {
-        /* ignore */
+      // Fetch driver names (public query) — non-fatal
+      const blasterDnRaw = await actor
+        .getAllDriverNames()
+        .catch(() => [] as Array<[bigint, string]>);
+      const blasterDnMap: Record<string, string> = {};
+      for (const pair of blasterDnRaw) {
+        blasterDnMap[String(pair[0])] = pair[1];
       }
+      setDriverNamesMap(blasterDnMap);
     } catch {
       setError("Failed to load orders. Please try again.");
     } finally {
@@ -1150,16 +1178,17 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
       setLoading(true);
       setError("");
       try {
-        const [all, driverNamesRaw] = await Promise.all([
-          actor.getAllOrders(),
-          actor.getAllDriverNames(),
-        ]);
+        const all = await actor.getAllOrders();
         setAllOrders(all.filter((o) => o.date === date));
-        const dnMap: Record<string, string> = {};
-        for (const [id, name] of driverNamesRaw) {
-          dnMap[String(id)] = name;
+        // Fetch driver names — non-fatal
+        const driverDnRaw = await actor
+          .getAllDriverNames()
+          .catch(() => [] as Array<[bigint, string]>);
+        const driverDnMap: Record<string, string> = {};
+        for (const pair of driverDnRaw) {
+          driverDnMap[String(pair[0])] = pair[1];
         }
-        setDriverNamesMap(dnMap);
+        setDriverNamesMap(driverDnMap);
       } catch {
         setError("Failed to load orders. Please try again.");
         setAllOrders([]);
@@ -1515,17 +1544,14 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
           initial[String(o.id)] = itemMap;
         }
         setEditableItems(initial);
-        // Fetch driver names
-        try {
-          const driverNamesRaw = await actor.getAllDriverNames();
-          const dnMap: Record<string, string> = {};
-          for (const [id, name] of driverNamesRaw) {
-            dnMap[String(id)] = name;
+        // Build driver names map from order data (driverName included in response)
+        const dnMap: Record<string, string> = {};
+        for (const owa of filtered) {
+          if (owa.driverName) {
+            dnMap[String(owa.order.id)] = owa.driverName;
           }
-          setDriverNamesMap(dnMap);
-        } catch {
-          /* ignore */
         }
+        setDriverNamesMap(dnMap);
       } catch {
         setError("Failed to load orders. Please try again.");
         setAllOrders([]);
@@ -1902,17 +1928,14 @@ function OfficeViewScreen({ navigate, actor, actorFetching }: ActorProps) {
           amts[String(owa.order.id)] = m;
         }
         setOfficeAmounts(amts);
-        // Fetch driver names
-        try {
-          const driverNamesRaw = await actor.getAllDriverNames();
-          const dnMap: Record<string, string> = {};
-          for (const [id, name] of driverNamesRaw) {
-            dnMap[String(id)] = name;
+        // Build driver names map from order data (driverName included in response)
+        const officeDnMap: Record<string, string> = {};
+        for (const owa of filtered) {
+          if (owa.driverName) {
+            officeDnMap[String(owa.order.id)] = owa.driverName;
           }
-          setDriverNamesMap(dnMap);
-        } catch {
-          /* ignore */
         }
+        setDriverNamesMap(officeDnMap);
       } catch {
         setError("Failed to load orders. Please try again.");
         setAllOrders([]);

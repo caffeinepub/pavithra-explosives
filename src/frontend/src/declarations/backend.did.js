@@ -38,6 +38,7 @@ export const Order = IDL.Record({
 export const OrderWithAmounts = IDL.Record({
   'order' : Order,
   'amounts' : IDL.Vec(ItemAmount),
+  'driverName' : IDL.Text,
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 
@@ -116,6 +117,7 @@ export const idlFactory = ({ IDL }) => {
   const OrderWithAmounts = IDL.Record({
     'order' : Order,
     'amounts' : IDL.Vec(ItemAmount),
+    'driverName' : IDL.Text,
   });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
   
