@@ -123,6 +123,12 @@ interface OrderCardProps {
   onSaveItems?: () => void;
   onBillDone?: () => void;
   isActioning?: boolean;
+  driverNamesMap?: Record<string, string>;
+  showDriverNameInput?: boolean;
+  driverNameValue?: string;
+  onDriverNameChange?: (v: string) => void;
+  onDriverNameConfirm?: () => void;
+  driverNameError?: string;
 }
 
 function OrderCard({
@@ -139,6 +145,12 @@ function OrderCard({
   onSaveItems,
   onBillDone,
   isActioning,
+  driverNamesMap,
+  showDriverNameInput,
+  driverNameValue,
+  onDriverNameChange,
+  onDriverNameConfirm,
+  driverNameError,
 }: OrderCardProps) {
   const cardOcid = `${viewerRole ?? "blaster"}.item.${index}`;
 
@@ -164,6 +176,14 @@ function OrderCard({
         <span className="order-card-label">DGMS:</span>
         <span className="order-card-value">{order.dgms}</span>
       </div>
+      {driverNamesMap?.[String(order.id)] && (
+        <div className="order-card-field">
+          <span className="order-card-label">Driver:</span>
+          <span className="order-card-value">
+            {driverNamesMap[String(order.id)]}
+          </span>
+        </div>
+      )}
       <div className="order-card-field">
         <span className="order-card-label">Date:</span>
         <span className="order-card-value">{order.date}</span>
@@ -275,20 +295,52 @@ function OrderCard({
         )}
 
       {/* Driver actions */}
-      {viewerRole === "driver" && order.status === OrderStatus.approved && (
-        <button
-          type="button"
-          className="btn-primary btn-sm mt-3"
-          onClick={onAccept}
-          disabled={isActioning}
-          data-ocid={`driver.accept_button.${index}`}
-        >
-          {isActioning ? (
-            <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
-          ) : null}
-          Accept
-        </button>
-      )}
+      {viewerRole === "driver" &&
+        order.status === OrderStatus.approved &&
+        (showDriverNameInput ? (
+          <div className="mt-3">
+            <input
+              className="form-input mb-1"
+              placeholder="Enter your driver name"
+              value={driverNameValue ?? ""}
+              onChange={(e) => onDriverNameChange?.(e.target.value)}
+              data-ocid={`driver.input.${index}`}
+            />
+            {driverNameError && (
+              <div
+                className="error-msg mb-1"
+                data-ocid={`driver.error_state.${index}`}
+              >
+                {driverNameError}
+              </div>
+            )}
+            <button
+              type="button"
+              className="btn-primary btn-success btn-sm"
+              onClick={onDriverNameConfirm}
+              disabled={isActioning}
+              data-ocid={`driver.confirm_button.${index}`}
+            >
+              {isActioning ? (
+                <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
+              ) : null}
+              Confirm Accept
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="btn-primary btn-sm mt-3"
+            onClick={onAccept}
+            disabled={isActioning}
+            data-ocid={`driver.accept_button.${index}`}
+          >
+            {isActioning ? (
+              <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
+            ) : null}
+            Accept
+          </button>
+        ))}
       {viewerRole === "driver" && order.status === OrderStatus.billDone && (
         <button
           type="button"
@@ -304,7 +356,7 @@ function OrderCard({
         </button>
       )}
 
-      {/* Office action — Bill Done on accepted orders (before delivery) */}
+      {/* Office action — Bill Done only after driver accepts */}
       {viewerRole === "office" && order.status === OrderStatus.accepted && (
         <button
           type="button"
@@ -839,6 +891,9 @@ function BlasterViewScreen({
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
   const [loginRequired, setLoginRequired] = useState(false);
+  const [driverNamesMap, setDriverNamesMap] = useState<Record<string, string>>(
+    {},
+  );
 
   const handleSearch = async () => {
     setError("");
@@ -869,6 +924,19 @@ function BlasterViewScreen({
       );
       setOrders(results);
       setSearched(true);
+      // Fetch driver names (public query)
+      try {
+        const driverNamesRaw = (await (
+          actor as any
+        ).getAllDriverNames()) as Array<[bigint, string]>;
+        const dnMap: Record<string, string> = {};
+        for (const [id, name] of driverNamesRaw) {
+          dnMap[String(id)] = name;
+        }
+        setDriverNamesMap(dnMap);
+      } catch {
+        /* ignore */
+      }
     } catch {
       setError("Failed to load orders. Please try again.");
     } finally {
@@ -981,6 +1049,7 @@ function BlasterViewScreen({
             order={order}
             index={idx + 1}
             viewerRole="blaster"
+            driverNamesMap={driverNamesMap}
           />
         ))}
     </div>
@@ -1067,6 +1136,12 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
   const [loading, setLoading] = useState(false);
   const [actioningId, setActioningId] = useState<bigint | null>(null);
   const [error, setError] = useState("");
+  const [pendingAcceptId, setPendingAcceptId] = useState<bigint | null>(null);
+  const [driverNameInput, setDriverNameInput] = useState("");
+  const [driverNameError, setDriverNameError] = useState("");
+  const [driverNamesMap, setDriverNamesMap] = useState<Record<string, string>>(
+    {},
+  );
 
   const fetchOrders = useCallback(
     async (date: string) => {
@@ -1077,8 +1152,18 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
       setLoading(true);
       setError("");
       try {
-        const all = await actor.getAllOrders();
+        const [all, driverNamesRaw] = await Promise.all([
+          actor.getAllOrders(),
+          (actor as any).getAllDriverNames() as Promise<
+            Array<[bigint, string]>
+          >,
+        ]);
         setAllOrders(all.filter((o) => o.date === date));
+        const dnMap: Record<string, string> = {};
+        for (const [id, name] of driverNamesRaw) {
+          dnMap[String(id)] = name;
+        }
+        setDriverNamesMap(dnMap);
       } catch {
         setError("Failed to load orders. Please try again.");
         setAllOrders([]);
@@ -1099,15 +1184,30 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
     );
   });
 
-  const handleAccept = async (orderId: bigint) => {
+  const handleAcceptClick = (orderId: bigint) => {
+    setPendingAcceptId(orderId);
+    setDriverNameInput("");
+    setDriverNameError("");
+  };
+
+  const handleDriverNameConfirm = async (orderId: bigint) => {
+    if (!driverNameInput.trim()) {
+      setDriverNameError("Driver name is required.");
+      return;
+    }
     if (!actor) return;
     setActioningId(orderId);
     try {
-      await actor.updateOrderStatus(orderId, OrderStatus.accepted);
+      await (actor as any).acceptOrderWithDriver(
+        orderId,
+        driverNameInput.trim(),
+      );
       toast.success("Order accepted.");
+      setPendingAcceptId(null);
+      setDriverNameInput("");
       await fetchOrders(filterDate);
     } catch {
-      toast.error("Failed to update order.");
+      toast.error("Failed to accept order.");
     } finally {
       setActioningId(null);
     }
@@ -1273,7 +1373,17 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
             index={idx + 1}
             viewerRole="driver"
             isActioning={actioningId === order.id}
-            onAccept={() => handleAccept(order.id)}
+            driverNamesMap={driverNamesMap}
+            showDriverNameInput={pendingAcceptId === order.id}
+            driverNameValue={
+              pendingAcceptId === order.id ? driverNameInput : ""
+            }
+            onDriverNameChange={(v) => setDriverNameInput(v)}
+            onDriverNameConfirm={() => handleDriverNameConfirm(order.id)}
+            driverNameError={
+              pendingAcceptId === order.id ? driverNameError : ""
+            }
+            onAccept={() => handleAcceptClick(order.id)}
             onDelivered={() => handleDelivered(order.id)}
           />
         ))}
@@ -1376,6 +1486,9 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
     Record<string, Record<string, EditableItemState>>
   >({});
   const [error, setError] = useState("");
+  const [driverNamesMap, setDriverNamesMap] = useState<Record<string, string>>(
+    {},
+  );
 
   const fetchOrders = useCallback(
     async (date: string) => {
@@ -1409,6 +1522,19 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
           initial[String(o.id)] = itemMap;
         }
         setEditableItems(initial);
+        // Fetch driver names
+        try {
+          const driverNamesRaw = (await (
+            actor as any
+          ).getAllDriverNames()) as Array<[bigint, string]>;
+          const dnMap: Record<string, string> = {};
+          for (const [id, name] of driverNamesRaw) {
+            dnMap[String(id)] = name;
+          }
+          setDriverNamesMap(dnMap);
+        } catch {
+          /* ignore */
+        }
       } catch {
         setError("Failed to load orders. Please try again.");
         setAllOrders([]);
@@ -1657,6 +1783,7 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
             onApprove={() => handleApprove(order)}
             onReject={() => handleReject(order.id)}
             onSaveItems={() => handleSaveItems(order)}
+            driverNamesMap={driverNamesMap}
           />
         ))}
 
@@ -1758,6 +1885,9 @@ function OfficeViewScreen({ navigate, actor, actorFetching }: ActorProps) {
   const [loading, setLoading] = useState(false);
   const [actioningId, setActioningId] = useState<bigint | null>(null);
   const [error, setError] = useState("");
+  const [driverNamesMap, setDriverNamesMap] = useState<Record<string, string>>(
+    {},
+  );
 
   const fetchOrders = useCallback(
     async (date: string) => {
@@ -1781,6 +1911,19 @@ function OfficeViewScreen({ navigate, actor, actorFetching }: ActorProps) {
           amts[String(owa.order.id)] = m;
         }
         setOfficeAmounts(amts);
+        // Fetch driver names
+        try {
+          const driverNamesRaw = (await (
+            actor as any
+          ).getAllDriverNames()) as Array<[bigint, string]>;
+          const dnMap: Record<string, string> = {};
+          for (const [id, name] of driverNamesRaw) {
+            dnMap[String(id)] = name;
+          }
+          setDriverNamesMap(dnMap);
+        } catch {
+          /* ignore */
+        }
       } catch {
         setError("Failed to load orders. Please try again.");
         setAllOrders([]);
@@ -1963,6 +2106,7 @@ function OfficeViewScreen({ navigate, actor, actorFetching }: ActorProps) {
             orderAmountsMap={officeAmounts[String(order.id)] ?? {}}
             isActioning={actioningId === order.id}
             onBillDone={() => handleBillDone(order.id)}
+            driverNamesMap={driverNamesMap}
           />
         ))}
 

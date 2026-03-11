@@ -10,6 +10,7 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface ItemAmount { 'amount' : string, 'name' : string }
 export interface Order {
   'id' : bigint,
   'status' : OrderStatus,
@@ -23,6 +24,10 @@ export interface Order {
   'quarry' : string,
 }
 export interface OrderItem { 'qty' : string, 'name' : string }
+export interface OrderWithAmounts {
+  'order' : Order,
+  'amounts' : Array<ItemAmount>,
+}
 export type OrderStatus = { 'pending' : null } |
   { 'billDone' : null } |
   { 'approved' : null } |
@@ -39,6 +44,7 @@ export interface _SERVICE {
   'assignDriverRole' : ActorMethod<[Principal], undefined>,
   'assignManagerRole' : ActorMethod<[Principal], undefined>,
   'getAllOrders' : ActorMethod<[], Array<Order>>,
+  'getAllOrdersWithAmounts' : ActorMethod<[], Array<OrderWithAmounts>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getOrderById' : ActorMethod<[bigint], [] | [Order]>,
@@ -50,6 +56,7 @@ export interface _SERVICE {
     [string, string, string, string, string, string, Array<OrderItem>],
     bigint
   >,
+  'updateItemAmounts' : ActorMethod<[bigint, Array<ItemAmount>], undefined>,
   'updateOrderItems' : ActorMethod<[bigint, Array<OrderItem>], undefined>,
   'updateOrderStatus' : ActorMethod<[bigint, OrderStatus], undefined>,
 }

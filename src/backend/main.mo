@@ -86,6 +86,9 @@ actor {
   // Separate stable map for item amounts — new variable, no migration needed
   let orderAmounts = Map.empty<Nat, [ItemAmount]>();
 
+  // Separate stable map for driver names — stored when driver accepts order
+  let orderDriverNames = Map.empty<Nat, Text>();
+
   // Custom role types for manager and driver
   let managerRole = Map.empty<Principal, Bool>();
   let driverRole = Map.empty<Principal, Bool>();
@@ -198,6 +201,11 @@ actor {
     );
   };
 
+  // Returns all driver names keyed by order id — for displaying in all panels
+  public query func getAllDriverNames() : async [(Nat, Text)] {
+    orderDriverNames.entries().toArray();
+  };
+
   // Save item amounts for an order (manager only, no auth — gated by frontend password)
   public shared func updateItemAmounts(orderId : Nat, amounts : [ItemAmount]) : async () {
     let _ = switch (orders.get(orderId)) {
@@ -207,9 +215,31 @@ actor {
     orderAmounts.add(orderId, amounts);
   };
 
+  // Accept order with driver name — driver must enter their name when accepting
+  public shared func acceptOrderWithDriver(orderId : Nat, driverName : Text) : async () {
+    let order = switch (orders.get(orderId)) {
+      case (null) { Runtime.trap("Order not found") };
+      case (?o) { o };
+    };
+
+    switch (order.status) {
+      case (#approved) {};
+      case (_) { Runtime.trap("Order must be in approved status to accept") };
+    };
+
+    validateNotEmpty(driverName, "Driver name");
+
+    let updatedOrder : Order = {
+      order with
+      status = #accepted;
+    };
+    orders.add(orderId, updatedOrder);
+    orderDriverNames.add(orderId, driverName);
+  };
+
   // No authorization check - any caller can update status
   // Access is gated by password on the frontend
-  // CRITICAL: Enforces correct status flow: accepted → billDone → delivered
+  // Status flow: accepted -> billDone -> delivered
   public shared func updateOrderStatus(orderId : Nat, newStatus : OrderStatus) : async () {
     let order = switch (orders.get(orderId)) {
       case (null) { Runtime.trap("Order not found") };
@@ -217,12 +247,11 @@ actor {
     };
 
     // Enforce valid status transitions per specification
-    // CRITICAL: billDone must come BEFORE delivered
     switch (order.status, newStatus) {
       case (#pending, #approved) {};
       case (#pending, #rejected) {};
-      case (#approved, #accepted) {};
-      case (#accepted, #billDone) {}; // Office marks bill done first
+      case (#approved, #rejected) {};
+      case (#accepted, #billDone) {}; // Office marks bill done after driver accepts
       case (#billDone, #delivered) {}; // Driver delivers only after bill is done
       case (_) { Runtime.trap("Invalid status transition") };
     };
@@ -235,13 +264,9 @@ actor {
     orders.add(orderId, updatedOrder);
   };
 
-  // ANY order status can have items updated (NO status restriction)
-  // Authorization added: requires user permission to prevent anonymous modification
-  public shared ({ caller }) func updateOrderItems(orderId : Nat, items : [OrderItem]) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can update order items");
-    };
-
+  // No authorization check — manager panel uses anonymous caller with frontend password
+  // Access is gated by password on the frontend (manager123)
+  public shared func updateOrderItems(orderId : Nat, items : [OrderItem]) : async () {
     let order = switch (orders.get(orderId)) {
       case (null) { Runtime.trap("Order not found") };
       case (?order) { order };

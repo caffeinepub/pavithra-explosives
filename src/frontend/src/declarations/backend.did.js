@@ -22,6 +22,7 @@ export const OrderStatus = IDL.Variant({
   'accepted' : IDL.Null,
 });
 export const OrderItem = IDL.Record({ 'qty' : IDL.Text, 'name' : IDL.Text });
+export const ItemAmount = IDL.Record({ 'amount' : IDL.Text, 'name' : IDL.Text });
 export const Order = IDL.Record({
   'id' : IDL.Nat,
   'status' : OrderStatus,
@@ -34,6 +35,10 @@ export const Order = IDL.Record({
   'items' : IDL.Vec(OrderItem),
   'quarry' : IDL.Text,
 });
+export const OrderWithAmounts = IDL.Record({
+  'order' : Order,
+  'amounts' : IDL.Vec(ItemAmount),
+});
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 
 export const idlService = IDL.Service({
@@ -42,6 +47,7 @@ export const idlService = IDL.Service({
   'assignDriverRole' : IDL.Func([IDL.Principal], [], []),
   'assignManagerRole' : IDL.Func([IDL.Principal], [], []),
   'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
+  'getAllOrdersWithAmounts' : IDL.Func([], [IDL.Vec(OrderWithAmounts)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getOrderById' : IDL.Func([IDL.Nat], [IDL.Opt(Order)], ['query']),
@@ -70,6 +76,7 @@ export const idlService = IDL.Service({
       [IDL.Nat],
       [],
     ),
+  'updateItemAmounts' : IDL.Func([IDL.Nat, IDL.Vec(ItemAmount)], [], []),
   'updateOrderItems' : IDL.Func([IDL.Nat, IDL.Vec(OrderItem)], [], []),
   'updateOrderStatus' : IDL.Func([IDL.Nat, OrderStatus], [], []),
 });
@@ -91,6 +98,7 @@ export const idlFactory = ({ IDL }) => {
     'accepted' : IDL.Null,
   });
   const OrderItem = IDL.Record({ 'qty' : IDL.Text, 'name' : IDL.Text });
+  const ItemAmount = IDL.Record({ 'amount' : IDL.Text, 'name' : IDL.Text });
   const Order = IDL.Record({
     'id' : IDL.Nat,
     'status' : OrderStatus,
@@ -103,6 +111,10 @@ export const idlFactory = ({ IDL }) => {
     'items' : IDL.Vec(OrderItem),
     'quarry' : IDL.Text,
   });
+  const OrderWithAmounts = IDL.Record({
+    'order' : Order,
+    'amounts' : IDL.Vec(ItemAmount),
+  });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
   
   return IDL.Service({
@@ -111,6 +123,7 @@ export const idlFactory = ({ IDL }) => {
     'assignDriverRole' : IDL.Func([IDL.Principal], [], []),
     'assignManagerRole' : IDL.Func([IDL.Principal], [], []),
     'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
+    'getAllOrdersWithAmounts' : IDL.Func([], [IDL.Vec(OrderWithAmounts)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getOrderById' : IDL.Func([IDL.Nat], [IDL.Opt(Order)], ['query']),
@@ -139,6 +152,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Nat],
         [],
       ),
+    'updateItemAmounts' : IDL.Func([IDL.Nat, IDL.Vec(ItemAmount)], [], []),
     'updateOrderItems' : IDL.Func([IDL.Nat, IDL.Vec(OrderItem)], [], []),
     'updateOrderStatus' : IDL.Func([IDL.Nat, OrderStatus], [], []),
   });
