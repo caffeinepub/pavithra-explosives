@@ -43,9 +43,11 @@ export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  'acceptOrderWithDriver' : IDL.Func([IDL.Nat, IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'assignDriverRole' : IDL.Func([IDL.Principal], [], []),
   'assignManagerRole' : IDL.Func([IDL.Principal], [], []),
+  'getAllDriverNames' : IDL.Func([], [IDL.Vec(IDL.Tuple([IDL.Nat, IDL.Text]))], ['query']),
   'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
   'getAllOrdersWithAmounts' : IDL.Func([], [IDL.Vec(OrderWithAmounts)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
@@ -119,9 +121,11 @@ export const idlFactory = ({ IDL }) => {
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    'acceptOrderWithDriver' : IDL.Func([IDL.Nat, IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'assignDriverRole' : IDL.Func([IDL.Principal], [], []),
     'assignManagerRole' : IDL.Func([IDL.Principal], [], []),
+    'getAllDriverNames' : IDL.Func([], [IDL.Vec(IDL.Tuple([IDL.Nat, IDL.Text]))], ['query']),
     'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
     'getAllOrdersWithAmounts' : IDL.Func([], [IDL.Vec(OrderWithAmounts)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),

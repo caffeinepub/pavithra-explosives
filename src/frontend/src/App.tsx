@@ -926,9 +926,7 @@ function BlasterViewScreen({
       setSearched(true);
       // Fetch driver names (public query)
       try {
-        const driverNamesRaw = (await (
-          actor as any
-        ).getAllDriverNames()) as Array<[bigint, string]>;
+        const driverNamesRaw = await actor.getAllDriverNames();
         const dnMap: Record<string, string> = {};
         for (const [id, name] of driverNamesRaw) {
           dnMap[String(id)] = name;
@@ -1154,9 +1152,7 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
       try {
         const [all, driverNamesRaw] = await Promise.all([
           actor.getAllOrders(),
-          (actor as any).getAllDriverNames() as Promise<
-            Array<[bigint, string]>
-          >,
+          actor.getAllDriverNames(),
         ]);
         setAllOrders(all.filter((o) => o.date === date));
         const dnMap: Record<string, string> = {};
@@ -1198,10 +1194,7 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
     if (!actor) return;
     setActioningId(orderId);
     try {
-      await (actor as any).acceptOrderWithDriver(
-        orderId,
-        driverNameInput.trim(),
-      );
+      await actor.acceptOrderWithDriver(orderId, driverNameInput.trim());
       toast.success("Order accepted.");
       setPendingAcceptId(null);
       setDriverNameInput("");
@@ -1524,9 +1517,7 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
         setEditableItems(initial);
         // Fetch driver names
         try {
-          const driverNamesRaw = (await (
-            actor as any
-          ).getAllDriverNames()) as Array<[bigint, string]>;
+          const driverNamesRaw = await actor.getAllDriverNames();
           const dnMap: Record<string, string> = {};
           for (const [id, name] of driverNamesRaw) {
             dnMap[String(id)] = name;
@@ -1913,9 +1904,7 @@ function OfficeViewScreen({ navigate, actor, actorFetching }: ActorProps) {
         setOfficeAmounts(amts);
         // Fetch driver names
         try {
-          const driverNamesRaw = (await (
-            actor as any
-          ).getAllDriverNames()) as Array<[bigint, string]>;
+          const driverNamesRaw = await actor.getAllDriverNames();
           const dnMap: Record<string, string> = {};
           for (const [id, name] of driverNamesRaw) {
             dnMap[String(id)] = name;

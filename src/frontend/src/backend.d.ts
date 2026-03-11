@@ -48,9 +48,11 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
+    acceptOrderWithDriver(orderId: bigint, driverName: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     assignDriverRole(user: Principal): Promise<void>;
     assignManagerRole(user: Principal): Promise<void>;
+    getAllDriverNames(): Promise<Array<[bigint, string]>>;
     getAllOrders(): Promise<Array<Order>>;
     getAllOrdersWithAmounts(): Promise<Array<OrderWithAmounts>>;
     getCallerUserProfile(): Promise<UserProfile | null>;

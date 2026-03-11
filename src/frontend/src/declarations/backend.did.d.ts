@@ -40,9 +40,11 @@ export type UserRole = { 'admin' : null } |
   { 'guest' : null };
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'acceptOrderWithDriver' : ActorMethod<[bigint, string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'assignDriverRole' : ActorMethod<[Principal], undefined>,
   'assignManagerRole' : ActorMethod<[Principal], undefined>,
+  'getAllDriverNames' : ActorMethod<[], Array<[bigint, string]>>,
   'getAllOrders' : ActorMethod<[], Array<Order>>,
   'getAllOrdersWithAmounts' : ActorMethod<[], Array<OrderWithAmounts>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,

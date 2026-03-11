@@ -147,6 +147,8 @@ export interface backendInterface {
     updateItemAmounts(orderId: bigint, amounts: Array<ItemAmount>): Promise<void>;
     updateOrderItems(orderId: bigint, items: Array<OrderItem>): Promise<void>;
     updateOrderStatus(orderId: bigint, newStatus: OrderStatus): Promise<void>;
+    getAllDriverNames(): Promise<Array<[bigint, string]>>;
+    acceptOrderWithDriver(orderId: bigint, driverName: string): Promise<void>;
 }
 import type { Order as _Order, OrderItem as _OrderItem, OrderStatus as _OrderStatus, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -393,6 +395,32 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.updateItemAmounts(arg0, arg1);
             return result;
+        }
+    }
+    async getAllDriverNames(): Promise<Array<[bigint, string]>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllDriverNames();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            return await this.actor.getAllDriverNames();
+        }
+    }
+    async acceptOrderWithDriver(arg0: bigint, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.acceptOrderWithDriver(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            return await this.actor.acceptOrderWithDriver(arg0, arg1);
         }
     }
 }
