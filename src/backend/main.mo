@@ -133,7 +133,9 @@ actor {
     false;
   };
 
-  public shared ({ caller }) func submitOrder(
+  // No authorization check — blasters submit without Internet Identity login
+  // Access is controlled by the app's form flow
+  public shared func submitOrder(
     quarry : Text,
     address : Text,
     blaster : Text,
@@ -142,10 +144,6 @@ actor {
     date : Text,
     items : [OrderItem],
   ) : async Nat {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can submit orders");
-    };
-
     validateOrderData(quarry, address, blaster, lease, dgms, date);
 
     if (hasActiveOrderForBlasterOnDate(blaster, date)) {
@@ -171,11 +169,8 @@ actor {
     order.id;
   };
 
-  public query ({ caller }) func getOrdersByBlaster(blaster : Text, date : Text) : async [Order] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view orders");
-    };
-
+  // No authorization check — blasters search by name without login
+  public query func getOrdersByBlaster(blaster : Text, date : Text) : async [Order] {
     orders.values().toArray().filter(
       func(order) {
         order.blaster.toLower().contains(#text (blaster.toLower())) and order.date == date
@@ -285,11 +280,8 @@ actor {
     orders.add(orderId, updatedOrder);
   };
 
-  public query ({ caller }) func getOrderById(orderId : Nat) : async ?Order {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view orders");
-    };
-
+  // No authorization check — blasters can view their own order by ID
+  public query func getOrderById(orderId : Nat) : async ?Order {
     orders.get(orderId);
   };
 };

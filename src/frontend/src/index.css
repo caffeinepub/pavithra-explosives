@@ -1,0 +1,363 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Cabinet Grotesk";
+  src: url("/assets/fonts/CabinetGrotesk-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Outfit";
+  src: url("/assets/fonts/Outfit-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+
+    /* Navy Blue Industrial Palette */
+    --background: 0.945 0.006 248;
+    --foreground: 0.18 0.02 245;
+    --card: 1 0 0;
+    --card-foreground: 0.18 0.02 245;
+    --popover: 1 0 0;
+    --popover-foreground: 0.18 0.02 245;
+
+    /* Navy primary */
+    --primary: 0.28 0.065 245;
+    --primary-foreground: 0.985 0 0;
+    --secondary: 0.92 0.015 245;
+    --secondary-foreground: 0.28 0.065 245;
+    --muted: 0.92 0.015 245;
+    --muted-foreground: 0.5 0.02 248;
+    --accent: 0.88 0.025 245;
+    --accent-foreground: 0.22 0.05 245;
+
+    --destructive: 0.577 0.245 27.325;
+    --destructive-foreground: 0.985 0 0;
+    --border: 0.87 0.015 248;
+    --input: 0.87 0.015 248;
+    --ring: 0.28 0.065 245;
+
+    --chart-1: 0.646 0.222 41.116;
+    --chart-2: 0.6 0.118 184.704;
+    --chart-3: 0.398 0.07 227.392;
+    --chart-4: 0.828 0.189 84.429;
+    --chart-5: 0.769 0.188 70.08;
+
+    --sidebar: 0.985 0 0;
+    --sidebar-foreground: 0.145 0 0;
+    --sidebar-primary: 0.205 0 0;
+    --sidebar-primary-foreground: 0.985 0 0;
+    --sidebar-accent: 0.97 0 0;
+    --sidebar-accent-foreground: 0.205 0 0;
+    --sidebar-border: 0.922 0 0;
+    --sidebar-ring: 0.708 0 0;
+
+    /* App-specific tokens */
+    --navy: 0.28 0.065 245;
+    --navy-dark: 0.22 0.07 245;
+    --navy-deep: 0.16 0.06 245;
+    --app-surface: 0.945 0.006 248;
+
+    /* Status tokens */
+    --status-pending-bg: 0.95 0.07 80;
+    --status-pending-text: 0.52 0.18 55;
+    --status-approved-bg: 0.94 0.06 145;
+    --status-approved-text: 0.38 0.14 145;
+    --status-accepted-bg: 0.92 0.05 230;
+    --status-accepted-text: 0.32 0.1 240;
+    --status-delivered-bg: 0.93 0.08 165;
+    --status-delivered-text: 0.35 0.14 160;
+    --status-rejected-bg: 0.94 0.06 25;
+    --status-rejected-text: 0.48 0.18 25;
+    --status-billdone-bg: 0.93 0.06 300;
+    --status-billdone-text: 0.38 0.14 290;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-[oklch(var(--app-surface))] text-foreground;
+    font-family: "Outfit", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Status badge colors */
+.badge-pending {
+  background-color: oklch(var(--status-pending-bg));
+  color: oklch(var(--status-pending-text));
+}
+.badge-approved {
+  background-color: oklch(var(--status-approved-bg));
+  color: oklch(var(--status-approved-text));
+}
+.badge-accepted {
+  background-color: oklch(var(--status-accepted-bg));
+  color: oklch(var(--status-accepted-text));
+}
+.badge-delivered {
+  background-color: oklch(var(--status-delivered-bg));
+  color: oklch(var(--status-delivered-text));
+}
+.badge-rejected {
+  background-color: oklch(var(--status-rejected-bg));
+  color: oklch(var(--status-rejected-text));
+}
+
+/* Table styles */
+.indent-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.indent-table th,
+.indent-table td {
+  border: 1px solid oklch(var(--border));
+  padding: 5px 6px;
+  text-align: center;
+}
+.indent-table th {
+  background-color: oklch(var(--navy) / 0.08);
+  font-weight: 700;
+  color: oklch(var(--navy));
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.indent-table input {
+  width: 60px;
+  padding: 3px 5px;
+  border: 1px solid oklch(var(--border));
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+  background: white;
+  font-family: "Outfit", sans-serif;
+}
+.indent-table input:focus {
+  outline: 2px solid oklch(var(--navy) / 0.4);
+  border-color: oklch(var(--navy));
+}
+
+/* App mobile container */
+.app-container {
+  max-width: 430px;
+  margin: 0 auto;
+  background: oklch(var(--app-surface));
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.app-header {
+  background: oklch(var(--navy-deep));
+  color: white;
+  padding: 14px 16px;
+  text-align: center;
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 2px 8px oklch(var(--navy-deep) / 0.3);
+}
+
+/* Screen transitions */
+.screen {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+/* Screen title */
+.screen-title {
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: oklch(var(--navy-deep));
+  text-align: center;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
+/* Cards */
+.order-card {
+  background: white;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px oklch(var(--border));
+  font-size: 13px;
+}
+.order-card-field {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 3px;
+}
+.order-card-label {
+  font-weight: 700;
+  color: oklch(var(--navy));
+  min-width: 72px;
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-size: 12px;
+}
+.order-card-value {
+  color: oklch(var(--foreground));
+}
+
+/* Primary button */
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  margin: 5px 0;
+  border: none;
+  border-radius: 8px;
+  background: oklch(var(--navy));
+  color: white;
+  font-weight: 700;
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary:hover {
+  background: oklch(var(--navy-dark));
+}
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.btn-secondary {
+  background: oklch(0.55 0.01 248);
+}
+.btn-secondary:hover {
+  background: oklch(0.48 0.015 248);
+}
+.btn-danger {
+  background: oklch(var(--destructive));
+}
+.btn-danger:hover {
+  background: oklch(0.52 0.245 27.325);
+}
+.btn-success {
+  background: oklch(0.5 0.15 145);
+}
+.btn-success:hover {
+  background: oklch(0.44 0.15 145);
+}
+.btn-sm {
+  padding: 7px 10px;
+  font-size: 12px;
+  width: auto;
+  margin: 3px 3px 3px 0;
+}
+
+/* Form inputs */
+.form-input {
+  width: 100%;
+  padding: 9px 12px;
+  margin: 4px 0;
+  border-radius: 7px;
+  border: 1px solid oklch(var(--border));
+  font-family: "Outfit", sans-serif;
+  font-size: 14px;
+  background: white;
+  color: oklch(var(--foreground));
+  transition: border-color 0.15s;
+}
+.form-input:focus {
+  outline: none;
+  border-color: oklch(var(--navy));
+  box-shadow: 0 0 0 3px oklch(var(--navy) / 0.12);
+}
+.form-input::placeholder {
+  color: oklch(var(--muted-foreground));
+}
+input[type="date"].form-input {
+  color-scheme: light;
+}
+
+/* Error message */
+.error-msg {
+  color: oklch(var(--destructive));
+  font-size: 12px;
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: oklch(var(--destructive) / 0.08);
+  border-radius: 6px;
+  border-left: 3px solid oklch(var(--destructive));
+}
+
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    oklch(var(--muted)) 25%,
+    oklch(var(--accent)) 50%,
+    oklch(var(--muted)) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-wave 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+@keyframes skeleton-wave {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Footer */
+.app-footer {
+  text-align: center;
+  padding: 12px 16px;
+  font-size: 11px;
+  color: oklch(var(--muted-foreground));
+  border-top: 1px solid oklch(var(--border));
+  background: white;
+}
+.app-footer a {
+  color: oklch(var(--navy));
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.badge-billdone {
+  background-color: oklch(var(--status-billdone-bg));
+  color: oklch(var(--status-billdone-text));
+}
+.btn-bill {
+  background: oklch(0.45 0.12 290);
+}
+.btn-bill:hover {
+  background: oklch(0.38 0.14 290);
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 32px 16px;
+  color: oklch(var(--muted-foreground));
+  font-size: 14px;
+}
+.empty-state-icon {
+  font-size: 36px;
+  margin-bottom: 8px;
+}

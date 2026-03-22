@@ -638,11 +638,6 @@ function IndentScreen({ navigate, actor, actorFetching }: IndentScreenProps) {
         msg.toLowerCase().includes("already")
       ) {
         setError("Only 1 order allowed per blaster per day");
-      } else if (
-        msg.toLowerCase().includes("unauthorized") ||
-        msg.toLowerCase().includes("only users")
-      ) {
-        setError("Please refresh the page and try again.");
       } else {
         setError("Failed to submit order. Please try again.");
       }
