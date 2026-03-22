@@ -954,15 +954,17 @@ function BlasterViewScreen({
       );
       setOrders(results);
       setSearched(true);
-      // Fetch driver names (public query) — non-fatal
-      const blasterDnRaw = await actor
-        .getAllDriverNames()
-        .catch(() => [] as Array<[bigint, string]>);
-      const blasterDnMap: Record<string, string> = {};
-      for (const pair of blasterDnRaw) {
-        blasterDnMap[String(pair[0])] = pair[1];
+      // Fetch driver names for all orders
+      try {
+        const blasterDnRaw = await actor.getAllDriverNames();
+        const blasterDnMap: Record<string, string> = {};
+        for (const pair of blasterDnRaw) {
+          blasterDnMap[String(pair[0])] = pair[1];
+        }
+        setDriverNamesMap(blasterDnMap);
+      } catch {
+        // driver names are non-fatal; orders still shown
       }
-      setDriverNamesMap(blasterDnMap);
     } catch {
       setError("Failed to load orders. Please try again.");
     } finally {
@@ -1178,15 +1180,17 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
       setLoading(true);
       setError("");
       try {
-        const all = await actor.getAllOrders();
-        setAllOrders(all.filter((o) => o.date === date));
-        // Fetch driver names — non-fatal
-        const driverDnRaw = await actor
-          .getAllDriverNames()
-          .catch(() => [] as Array<[bigint, string]>);
+        const allWithAmounts = await actor.getAllOrdersWithAmounts();
+        const filtered = allWithAmounts.filter(
+          (owa) => owa.order.date === date,
+        );
+        setAllOrders(filtered.map((owa) => owa.order));
+        // Build driver names map from embedded driverName field
         const driverDnMap: Record<string, string> = {};
-        for (const pair of driverDnRaw) {
-          driverDnMap[String(pair[0])] = pair[1];
+        for (const owa of filtered) {
+          if (owa.driverName) {
+            driverDnMap[String(owa.order.id)] = owa.driverName;
+          }
         }
         setDriverNamesMap(driverDnMap);
       } catch {
