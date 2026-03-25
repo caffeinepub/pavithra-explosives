@@ -28,6 +28,7 @@ export interface OrderWithAmounts {
   'order' : Order,
   'amounts' : Array<ItemAmount>,
   'driverName' : string,
+  'vehicleNumber' : string,
 }
 export type OrderStatus = { 'pending' : null } |
   { 'billDone' : null } |
@@ -42,6 +43,7 @@ export type UserRole = { 'admin' : null } |
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'acceptOrderWithDriver' : ActorMethod<[bigint, string], undefined>,
+  'approveOrderWithVehicle' : ActorMethod<[bigint, string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'assignDriverRole' : ActorMethod<[Principal], undefined>,
   'assignManagerRole' : ActorMethod<[Principal], undefined>,

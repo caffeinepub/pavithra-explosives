@@ -39,12 +39,14 @@ export const OrderWithAmounts = IDL.Record({
   'order' : Order,
   'amounts' : IDL.Vec(ItemAmount),
   'driverName' : IDL.Text,
+  'vehicleNumber' : IDL.Text,
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'acceptOrderWithDriver' : IDL.Func([IDL.Nat, IDL.Text], [], []),
+  'approveOrderWithVehicle' : IDL.Func([IDL.Nat, IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'assignDriverRole' : IDL.Func([IDL.Principal], [], []),
   'assignManagerRole' : IDL.Func([IDL.Principal], [], []),
@@ -118,12 +120,14 @@ export const idlFactory = ({ IDL }) => {
     'order' : Order,
     'amounts' : IDL.Vec(ItemAmount),
     'driverName' : IDL.Text,
+    'vehicleNumber' : IDL.Text,
   });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'acceptOrderWithDriver' : IDL.Func([IDL.Nat, IDL.Text], [], []),
+    'approveOrderWithVehicle' : IDL.Func([IDL.Nat, IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'assignDriverRole' : IDL.Func([IDL.Principal], [], []),
     'assignManagerRole' : IDL.Func([IDL.Principal], [], []),

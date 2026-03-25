@@ -116,6 +116,7 @@ export interface OrderWithAmounts {
     order: Order;
     amounts: Array<ItemAmount>;
     driverName: string;
+    vehicleNumber: string;
 }
 export enum OrderStatus {
     pending = "pending",
@@ -150,6 +151,7 @@ export interface backendInterface {
     updateOrderStatus(orderId: bigint, newStatus: OrderStatus): Promise<void>;
     getAllDriverNames(): Promise<Array<[bigint, string]>>;
     acceptOrderWithDriver(orderId: bigint, driverName: string): Promise<void>;
+    approveOrderWithVehicle(orderId: bigint, vehicleNumber: string): Promise<void>;
 }
 import type { Order as _Order, OrderItem as _OrderItem, OrderStatus as _OrderStatus, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -372,6 +374,7 @@ export class Backend implements backendInterface {
                     order: from_candid_Order_n4(this._uploadFile, this._downloadFile, item.order),
                     amounts: item.amounts,
                     driverName: item.driverName ?? '',
+                    vehicleNumber: item.vehicleNumber ?? '',
                 }));
             } catch (e) {
                 this.processError(e);
@@ -383,6 +386,7 @@ export class Backend implements backendInterface {
                 order: from_candid_Order_n4(this._uploadFile, this._downloadFile, item.order),
                 amounts: item.amounts,
                 driverName: item.driverName ?? '',
+                vehicleNumber: item.vehicleNumber ?? '',
             }));
         }
     }
@@ -424,6 +428,19 @@ export class Backend implements backendInterface {
             }
         } else {
             return await this.actor.acceptOrderWithDriver(arg0, arg1);
+        }
+    }
+    async approveOrderWithVehicle(arg0: bigint, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.approveOrderWithVehicle(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            return await this.actor.approveOrderWithVehicle(arg0, arg1);
         }
     }
 }

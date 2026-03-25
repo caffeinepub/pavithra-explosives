@@ -6,7 +6,6 @@ import {
   ClipboardList,
   Filter,
   Loader2,
-  LogIn,
   LogOut,
   Package2,
   Receipt,
@@ -129,6 +128,12 @@ interface OrderCardProps {
   onDriverNameChange?: (v: string) => void;
   onDriverNameConfirm?: () => void;
   driverNameError?: string;
+  vehicleNamesMap?: Record<string, string>;
+  showVehicleInput?: boolean;
+  vehicleValue?: string;
+  onVehicleChange?: (v: string) => void;
+  onVehicleConfirm?: () => void;
+  vehicleError?: string;
 }
 
 function OrderCard({
@@ -151,6 +156,12 @@ function OrderCard({
   onDriverNameChange,
   onDriverNameConfirm,
   driverNameError,
+  vehicleNamesMap,
+  showVehicleInput,
+  vehicleValue,
+  onVehicleChange,
+  onVehicleConfirm,
+  vehicleError,
 }: OrderCardProps) {
   const cardOcid = `${viewerRole ?? "blaster"}.item.${index}`;
 
@@ -193,14 +204,30 @@ function OrderCard({
               <span className="order-card-label">Date:</span>
               <span className="order-card-value">{order.date}</span>
             </span>
-            {driverNamesMap?.[String(order.id)] && (
-              <span style={{ textAlign: "right" }}>
-                <span className="order-card-label">Driver: </span>
-                <span className="order-card-value" style={{ fontWeight: 700 }}>
-                  {driverNamesMap[String(order.id)]}
+            <span style={{ textAlign: "right" }}>
+              {driverNamesMap?.[String(order.id)] && (
+                <span style={{ display: "block" }}>
+                  <span className="order-card-label">Driver: </span>
+                  <span
+                    className="order-card-value"
+                    style={{ fontWeight: 700 }}
+                  >
+                    {driverNamesMap[String(order.id)]}
+                  </span>
                 </span>
-              </span>
-            )}
+              )}
+              {vehicleNamesMap?.[String(order.id)] && (
+                <span style={{ display: "block" }}>
+                  <span className="order-card-label">Vehicle: </span>
+                  <span
+                    className="order-card-value"
+                    style={{ fontWeight: 700 }}
+                  >
+                    {vehicleNamesMap[String(order.id)]}
+                  </span>
+                </span>
+              )}
+            </span>
           </div>
         </div>
         <div style={{ textAlign: "right", marginLeft: 12, flexShrink: 0 }}>
@@ -280,31 +307,73 @@ function OrderCard({
       </table>
 
       {/* Manager actions for Pending */}
-      {viewerRole === "manager" && order.status === OrderStatus.pending && (
-        <div className="flex gap-2 mt-3">
-          <button
-            type="button"
-            className="btn-primary btn-success btn-sm"
-            onClick={onApprove}
-            disabled={isActioning}
-            data-ocid={`manager.approve_button.${index}`}
-          >
-            {isActioning ? (
-              <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
-            ) : null}
-            Approve
-          </button>
-          <button
-            type="button"
-            className="btn-primary btn-danger btn-sm"
-            onClick={onReject}
-            disabled={isActioning}
-            data-ocid={`manager.reject_button.${index}`}
-          >
-            Reject
-          </button>
-        </div>
-      )}
+      {viewerRole === "manager" &&
+        order.status === OrderStatus.pending &&
+        (showVehicleInput ? (
+          <div className="mt-3">
+            <input
+              className="form-input mb-1"
+              placeholder="Enter vehicle number"
+              value={vehicleValue ?? ""}
+              onChange={(e) => onVehicleChange?.(e.target.value)}
+              data-ocid={`manager.vehicle_input.${index}`}
+            />
+            {vehicleError && (
+              <div
+                className="error-msg mb-1"
+                data-ocid={`manager.vehicle_error.${index}`}
+              >
+                {vehicleError}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="btn-primary btn-success btn-sm"
+                onClick={onVehicleConfirm}
+                disabled={isActioning}
+                data-ocid={`manager.approve_button.${index}`}
+              >
+                {isActioning ? (
+                  <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
+                ) : null}
+                Confirm Approve
+              </button>
+              <button
+                type="button"
+                className="btn-primary btn-secondary btn-sm"
+                onClick={() => onVehicleChange?.("")}
+                disabled={isActioning}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex gap-2 mt-3">
+            <button
+              type="button"
+              className="btn-primary btn-success btn-sm"
+              onClick={onApprove}
+              disabled={isActioning}
+              data-ocid={`manager.approve_button.${index}`}
+            >
+              {isActioning ? (
+                <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
+              ) : null}
+              Approve
+            </button>
+            <button
+              type="button"
+              className="btn-primary btn-danger btn-sm"
+              onClick={onReject}
+              disabled={isActioning}
+              data-ocid={`manager.reject_button.${index}`}
+            >
+              Reject
+            </button>
+          </div>
+        ))}
 
       {/* Manager save items for non-pending orders */}
       {viewerRole === "manager" &&
@@ -905,33 +974,25 @@ function BlasterViewScreen({
   navigate,
   actor,
   actorFetching,
-  identity,
-  login,
-  isLoggingIn,
 }: BlasterViewScreenProps) {
   const [blasterName, setBlasterName] = useState("");
   const [searchDate, setSearchDate] = useState("");
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<OrderWithAmounts[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
-  const [loginRequired, setLoginRequired] = useState(false);
   const [driverNamesMap, setDriverNamesMap] = useState<Record<string, string>>(
     {},
   );
+  const [vehicleNamesMap, setVehicleNamesMap] = useState<
+    Record<string, string>
+  >({});
 
   const handleSearch = async () => {
     setError("");
-    setLoginRequired(false);
 
     if (!blasterName.trim()) {
       setError("Blaster name is required.");
-      return;
-    }
-
-    // If not logged in, show login prompt
-    if (!identity) {
-      setLoginRequired(true);
       return;
     }
 
@@ -943,23 +1004,27 @@ function BlasterViewScreen({
     setLoading(true);
     setSearched(false);
     try {
-      const results = await actor.getOrdersByBlaster(
-        blasterName.trim(),
-        searchDate,
-      );
-      setOrders(results);
+      const allOwa = await actor.getAllOrdersWithAmounts();
+      const filtered = allOwa.filter((owa) => {
+        const nameMatch =
+          owa.order.blaster.toLowerCase() === blasterName.trim().toLowerCase();
+        const dateMatch = searchDate ? owa.order.date === searchDate : true;
+        return nameMatch && dateMatch;
+      });
+      setOrders(filtered);
       setSearched(true);
-      // Fetch driver names for all orders
-      try {
-        const blasterDnRaw = await actor.getAllDriverNames();
-        const blasterDnMap: Record<string, string> = {};
-        for (const pair of blasterDnRaw) {
-          blasterDnMap[String(pair[0])] = pair[1];
+      const dnMap: Record<string, string> = {};
+      const vnMap: Record<string, string> = {};
+      for (const owa of filtered) {
+        if (owa.driverName) {
+          dnMap[String(owa.order.id)] = owa.driverName;
         }
-        setDriverNamesMap(blasterDnMap);
-      } catch {
-        // driver names are non-fatal; orders still shown
+        if (owa.vehicleNumber) {
+          vnMap[String(owa.order.id)] = owa.vehicleNumber;
+        }
       }
+      setDriverNamesMap(dnMap);
+      setVehicleNamesMap(vnMap);
     } catch {
       setError("Failed to load orders. Please try again.");
     } finally {
@@ -992,53 +1057,20 @@ function BlasterViewScreen({
         </div>
       )}
 
-      {loginRequired && (
-        <div className="order-card mt-3">
-          <p
-            className="text-sm font-semibold mb-2"
-            style={{ color: "oklch(var(--navy-deep))" }}
-          >
-            Please login first
-          </p>
-          <p
-            className="text-xs mb-3"
-            style={{ color: "oklch(var(--muted-foreground))" }}
-          >
-            Login is required to search orders.
-          </p>
-          <button
-            type="button"
-            className="btn-primary flex items-center justify-center gap-2"
-            onClick={login}
-            disabled={isLoggingIn}
-            data-ocid="blaster.primary_button"
-          >
-            {isLoggingIn ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <LogIn className="h-4 w-4" />
-            )}
-            {isLoggingIn ? "Logging in..." : "Login"}
-          </button>
-        </div>
-      )}
-
-      {!loginRequired && (
-        <button
-          type="button"
-          className="btn-primary mt-2 flex items-center justify-center gap-2"
-          onClick={handleSearch}
-          disabled={loading || actorFetching}
-          data-ocid="blaster.primary_button"
-        >
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Search className="h-4 w-4" />
-          )}
-          Search
-        </button>
-      )}
+      <button
+        type="button"
+        className="btn-primary mt-2 flex items-center justify-center gap-2"
+        onClick={handleSearch}
+        disabled={loading || actorFetching}
+        data-ocid="blaster.primary_button"
+      >
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Search className="h-4 w-4" />
+        )}
+        Search
+      </button>
 
       <button
         type="button"
@@ -1066,13 +1098,14 @@ function BlasterViewScreen({
       )}
 
       {!loading &&
-        orders.map((order, idx) => (
+        orders.map((owa, idx) => (
           <OrderCard
-            key={String(order.id)}
-            order={order}
+            key={String(owa.order.id)}
+            order={owa.order}
             index={idx + 1}
             viewerRole="blaster"
             driverNamesMap={driverNamesMap}
+            vehicleNamesMap={vehicleNamesMap}
           />
         ))}
     </div>
@@ -1165,6 +1198,9 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
   const [driverNamesMap, setDriverNamesMap] = useState<Record<string, string>>(
     {},
   );
+  const [vehicleNamesMap, setVehicleNamesMap] = useState<
+    Record<string, string>
+  >({});
 
   const fetchOrders = useCallback(
     async (date: string) => {
@@ -1188,6 +1224,14 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
           }
         }
         setDriverNamesMap(driverDnMap);
+        // Build vehicle numbers map
+        const driverVnMap: Record<string, string> = {};
+        for (const owa of filtered) {
+          if (owa.vehicleNumber) {
+            driverVnMap[String(owa.order.id)] = owa.vehicleNumber;
+          }
+        }
+        setVehicleNamesMap(driverVnMap);
       } catch {
         setError("Failed to load orders. Please try again.");
         setAllOrders([]);
@@ -1395,6 +1439,7 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
             viewerRole="driver"
             isActioning={actioningId === order.id}
             driverNamesMap={driverNamesMap}
+            vehicleNamesMap={vehicleNamesMap}
             showDriverNameInput={pendingAcceptId === order.id}
             driverNameValue={
               pendingAcceptId === order.id ? driverNameInput : ""
@@ -1510,6 +1555,12 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
   const [driverNamesMap, setDriverNamesMap] = useState<Record<string, string>>(
     {},
   );
+  const [vehicleNamesMap, setVehicleNamesMap] = useState<
+    Record<string, string>
+  >({});
+  const [pendingApproveId, setPendingApproveId] = useState<bigint | null>(null);
+  const [vehicleInput, setVehicleInput] = useState("");
+  const [vehicleError, setVehicleError] = useState("");
 
   const fetchOrders = useCallback(
     async (date: string) => {
@@ -1551,6 +1602,14 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
           }
         }
         setDriverNamesMap(dnMap);
+        // Build vehicle numbers map
+        const managerVnMap: Record<string, string> = {};
+        for (const owa of filtered) {
+          if (owa.vehicleNumber) {
+            managerVnMap[String(owa.order.id)] = owa.vehicleNumber;
+          }
+        }
+        setVehicleNamesMap(managerVnMap);
       } catch {
         setError("Failed to load orders. Please try again.");
         setAllOrders([]);
@@ -1582,7 +1641,17 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
     }));
   };
 
-  const handleApprove = async (order: Order) => {
+  const handleApproveClick = (order: Order) => {
+    setPendingApproveId(order.id);
+    setVehicleInput("");
+    setVehicleError("");
+  };
+
+  const handleVehicleConfirm = async (order: Order) => {
+    if (!vehicleInput.trim()) {
+      setVehicleError("Vehicle number is required.");
+      return;
+    }
     if (!actor) return;
     const oid = String(order.id);
     setActioningId(order.id);
@@ -1597,8 +1666,10 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
       }));
       await actor.updateOrderItems(order.id, updatedItems);
       await actor.updateItemAmounts(order.id, updatedAmounts);
-      await actor.updateOrderStatus(order.id, OrderStatus.approved);
+      await actor.approveOrderWithVehicle(order.id, vehicleInput.trim());
       toast.success("Order approved.");
+      setPendingApproveId(null);
+      setVehicleInput("");
       await fetchOrders(filterDate);
     } catch {
       toast.error("Failed to approve order.");
@@ -1796,10 +1867,19 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
               handleItemChange(String(order.id), originalName, field, value)
             }
             isActioning={actioningId === order.id}
-            onApprove={() => handleApprove(order)}
+            onApprove={() => handleApproveClick(order)}
             onReject={() => handleReject(order.id)}
             onSaveItems={() => handleSaveItems(order)}
             driverNamesMap={driverNamesMap}
+            vehicleNamesMap={vehicleNamesMap}
+            showVehicleInput={pendingApproveId === order.id}
+            vehicleValue={pendingApproveId === order.id ? vehicleInput : ""}
+            onVehicleChange={(v) => {
+              setVehicleInput(v);
+              setVehicleError("");
+            }}
+            onVehicleConfirm={() => handleVehicleConfirm(order)}
+            vehicleError={pendingApproveId === order.id ? vehicleError : ""}
           />
         ))}
 
@@ -1904,6 +1984,9 @@ function OfficeViewScreen({ navigate, actor, actorFetching }: ActorProps) {
   const [driverNamesMap, setDriverNamesMap] = useState<Record<string, string>>(
     {},
   );
+  const [vehicleNamesMap, setVehicleNamesMap] = useState<
+    Record<string, string>
+  >({});
 
   const fetchOrders = useCallback(
     async (date: string) => {
@@ -1929,12 +2012,17 @@ function OfficeViewScreen({ navigate, actor, actorFetching }: ActorProps) {
         setOfficeAmounts(amts);
         // Build driver names map from order data (driverName included in response)
         const officeDnMap: Record<string, string> = {};
+        const officeVnMap: Record<string, string> = {};
         for (const owa of filtered) {
           if (owa.driverName) {
             officeDnMap[String(owa.order.id)] = owa.driverName;
           }
+          if (owa.vehicleNumber) {
+            officeVnMap[String(owa.order.id)] = owa.vehicleNumber;
+          }
         }
         setDriverNamesMap(officeDnMap);
+        setVehicleNamesMap(officeVnMap);
       } catch {
         setError("Failed to load orders. Please try again.");
         setAllOrders([]);
@@ -2118,6 +2206,7 @@ function OfficeViewScreen({ navigate, actor, actorFetching }: ActorProps) {
             isActioning={actioningId === order.id}
             onBillDone={() => handleBillDone(order.id)}
             driverNamesMap={driverNamesMap}
+            vehicleNamesMap={vehicleNamesMap}
           />
         ))}
 

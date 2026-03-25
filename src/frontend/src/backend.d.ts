@@ -34,6 +34,7 @@ export interface OrderWithAmounts {
     order: Order;
     amounts: Array<ItemAmount>;
     driverName: string;
+    vehicleNumber: string;
 }
 export enum OrderStatus {
     pending = "pending",
@@ -50,6 +51,7 @@ export enum UserRole {
 }
 export interface backendInterface {
     acceptOrderWithDriver(orderId: bigint, driverName: string): Promise<void>;
+    approveOrderWithVehicle(orderId: bigint, vehicleNumber: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     assignDriverRole(user: Principal): Promise<void>;
     assignManagerRole(user: Principal): Promise<void>;

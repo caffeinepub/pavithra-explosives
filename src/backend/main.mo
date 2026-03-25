@@ -40,19 +40,16 @@ actor {
     userProfiles.add(caller, profile);
   };
 
-  // OrderItem does NOT include amount — amount stored separately to avoid migration issues
   type OrderItem = {
     name : Text;
     qty : Text;
   };
 
-  // Item amount stored in separate stable map to avoid migration compatibility issues
   type ItemAmount = {
     name : Text;
     amount : Text;
   };
 
-  // Updated OrderStatus type with billDone
   type OrderStatus = {
     #pending;
     #approved;
@@ -79,18 +76,16 @@ actor {
     order : Order;
     amounts : [ItemAmount];
     driverName : Text;
+    vehicleNumber : Text;
   };
 
   let orders = Map.empty<Nat, Order>();
   var nextOrderId = 1;
 
-  // Separate stable map for item amounts — new variable, no migration needed
   let orderAmounts = Map.empty<Nat, [ItemAmount]>();
-
-  // Separate stable map for driver names — stored when driver accepts order
   let orderDriverNames = Map.empty<Nat, Text>();
+  let orderVehicleNumbers = Map.empty<Nat, Text>();
 
-  // Custom role types for manager and driver
   let managerRole = Map.empty<Principal, Bool>();
   let driverRole = Map.empty<Principal, Bool>();
 
@@ -133,8 +128,6 @@ actor {
     false;
   };
 
-  // No authorization check — blasters submit without Internet Identity login
-  // Access is controlled by the app's form flow
   public shared func submitOrder(
     quarry : Text,
     address : Text,
@@ -169,7 +162,6 @@ actor {
     order.id;
   };
 
-  // No authorization check — blasters search by name without login
   public query func getOrdersByBlaster(blaster : Text, date : Text) : async [Order] {
     orders.values().toArray().filter(
       func(order) {
@@ -178,13 +170,10 @@ actor {
     );
   };
 
-  // No authorization check - accessible to anyone including anonymous callers
-  // Access is gated by password on the frontend (driver123 / manager123)
   public query func getAllOrders() : async [Order] {
     orders.values().toArray();
   };
 
-  // Returns orders with their item amounts and driver name — for manager and office panels
   public query func getAllOrdersWithAmounts() : async [OrderWithAmounts] {
     orders.values().toArray().map(
       func(order : Order) : OrderWithAmounts {
@@ -196,17 +185,19 @@ actor {
           case (?n) { n };
           case (null) { "" };
         };
-        { order; amounts; driverName };
+        let vehicleNumber = switch (orderVehicleNumbers.get(order.id)) {
+          case (?v) { v };
+          case (null) { "" };
+        };
+        { order; amounts; driverName; vehicleNumber };
       }
     );
   };
 
-  // Returns all driver names keyed by order id — for displaying in all panels
   public query func getAllDriverNames() : async [(Nat, Text)] {
     orderDriverNames.entries().toArray();
   };
 
-  // Save item amounts for an order (manager only, no auth — gated by frontend password)
   public shared func updateItemAmounts(orderId : Nat, amounts : [ItemAmount]) : async () {
     let _ = switch (orders.get(orderId)) {
       case (null) { Runtime.trap("Order not found") };
@@ -215,7 +206,28 @@ actor {
     orderAmounts.add(orderId, amounts);
   };
 
-  // Accept order with driver name — driver must enter their name when accepting
+  // Approve order with vehicle number — manager must enter vehicle number on approval
+  public shared func approveOrderWithVehicle(orderId : Nat, vehicleNumber : Text) : async () {
+    let order = switch (orders.get(orderId)) {
+      case (null) { Runtime.trap("Order not found") };
+      case (?o) { o };
+    };
+
+    switch (order.status) {
+      case (#pending) {};
+      case (_) { Runtime.trap("Order must be pending to approve") };
+    };
+
+    validateNotEmpty(vehicleNumber, "Vehicle number");
+
+    let updatedOrder : Order = {
+      order with
+      status = #approved;
+    };
+    orders.add(orderId, updatedOrder);
+    orderVehicleNumbers.add(orderId, vehicleNumber);
+  };
+
   public shared func acceptOrderWithDriver(orderId : Nat, driverName : Text) : async () {
     let order = switch (orders.get(orderId)) {
       case (null) { Runtime.trap("Order not found") };
@@ -237,22 +249,18 @@ actor {
     orderDriverNames.add(orderId, driverName);
   };
 
-  // No authorization check - any caller can update status
-  // Access is gated by password on the frontend
-  // Status flow: accepted -> billDone -> delivered
   public shared func updateOrderStatus(orderId : Nat, newStatus : OrderStatus) : async () {
     let order = switch (orders.get(orderId)) {
       case (null) { Runtime.trap("Order not found") };
       case (?order) { order };
     };
 
-    // Enforce valid status transitions per specification
     switch (order.status, newStatus) {
       case (#pending, #approved) {};
       case (#pending, #rejected) {};
       case (#approved, #rejected) {};
-      case (#accepted, #billDone) {}; // Office marks bill done after driver accepts
-      case (#billDone, #delivered) {}; // Driver delivers only after bill is done
+      case (#accepted, #billDone) {};
+      case (#billDone, #delivered) {};
       case (_) { Runtime.trap("Invalid status transition") };
     };
 
@@ -264,8 +272,6 @@ actor {
     orders.add(orderId, updatedOrder);
   };
 
-  // No authorization check — manager panel uses anonymous caller with frontend password
-  // Access is gated by password on the frontend (manager123)
   public shared func updateOrderItems(orderId : Nat, items : [OrderItem]) : async () {
     let order = switch (orders.get(orderId)) {
       case (null) { Runtime.trap("Order not found") };
@@ -280,7 +286,6 @@ actor {
     orders.add(orderId, updatedOrder);
   };
 
-  // No authorization check — blasters can view their own order by ID
   public query func getOrderById(orderId : Nat) : async ?Order {
     orders.get(orderId);
   };
