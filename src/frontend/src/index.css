@@ -91,48 +91,106 @@
   }
 }
 
-/* Status badge colors */
+/* ============================================================
+   STATUS BADGE COLORS
+   ============================================================ */
+
 .badge-pending {
   background-color: oklch(var(--status-pending-bg));
   color: oklch(var(--status-pending-text));
+  border: 1.5px solid oklch(var(--status-pending-text) / 0.35);
 }
 .badge-approved {
   background-color: oklch(var(--status-approved-bg));
   color: oklch(var(--status-approved-text));
+  border: 1.5px solid oklch(var(--status-approved-text) / 0.35);
 }
 .badge-accepted {
   background-color: oklch(var(--status-accepted-bg));
   color: oklch(var(--status-accepted-text));
+  border: 1.5px solid oklch(var(--status-accepted-text) / 0.35);
 }
 .badge-delivered {
   background-color: oklch(var(--status-delivered-bg));
   color: oklch(var(--status-delivered-text));
+  border: 1.5px solid oklch(var(--status-delivered-text) / 0.35);
 }
 .badge-rejected {
   background-color: oklch(var(--status-rejected-bg));
   color: oklch(var(--status-rejected-text));
+  border: 1.5px solid oklch(var(--status-rejected-text) / 0.35);
+}
+.badge-billdone {
+  background-color: oklch(var(--status-billdone-bg));
+  color: oklch(var(--status-billdone-text));
+  border: 1.5px solid oklch(var(--status-billdone-text) / 0.35);
 }
 
-/* Table styles */
+/* Badge dot indicator */
+.badge-pending::before,
+.badge-approved::before,
+.badge-accepted::before,
+.badge-delivered::before,
+.badge-rejected::before,
+.badge-billdone::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+  margin-top: -1px;
+}
+.badge-pending::before {
+  background: oklch(var(--status-pending-text));
+}
+.badge-approved::before {
+  background: oklch(var(--status-approved-text));
+}
+.badge-accepted::before {
+  background: oklch(var(--status-accepted-text));
+}
+.badge-delivered::before {
+  background: oklch(var(--status-delivered-text));
+}
+.badge-rejected::before {
+  background: oklch(var(--status-rejected-text));
+}
+.badge-billdone::before {
+  background: oklch(var(--status-billdone-text));
+}
+
+/* ============================================================
+   TABLE STYLES
+   ============================================================ */
+
 .indent-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px oklch(var(--navy) / 0.1);
 }
 .indent-table th,
 .indent-table td {
   border: 1px solid oklch(var(--border));
-  padding: 5px 6px;
+  padding: 6px 7px;
   text-align: center;
 }
 .indent-table th {
-  background-color: oklch(var(--navy) / 0.08);
+  background: oklch(var(--navy-deep));
+  color: white;
   font-weight: 700;
-  color: oklch(var(--navy));
   font-family: "Cabinet Grotesk", sans-serif;
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  border-color: oklch(var(--navy-dark));
+}
+.indent-table tbody tr:nth-child(even) {
+  background-color: oklch(var(--navy) / 0.03);
 }
 .indent-table input {
   width: 60px;
@@ -149,6 +207,26 @@
   border-color: oklch(var(--navy));
 }
 
+/* ============================================================
+   APP SHELL
+   ============================================================ */
+
+/* Background texture — subtle diagonal lines */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 18px,
+    oklch(var(--navy) / 0.028) 18px,
+    oklch(var(--navy) / 0.028) 19px
+  );
+  pointer-events: none;
+}
+
 /* App mobile container */
 .app-container {
   max-width: 430px;
@@ -157,52 +235,115 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
-/* Header */
+/* Header — gradient with glow */
 .app-header {
-  background: oklch(var(--navy-deep));
+  background: linear-gradient(
+    135deg,
+    oklch(var(--navy-deep)) 0%,
+    oklch(0.22 0.075 250) 50%,
+    oklch(var(--navy)) 100%
+  );
   color: white;
-  padding: 14px 16px;
+  padding: 16px 16px;
   text-align: center;
   font-family: "Cabinet Grotesk", sans-serif;
   font-weight: 800;
   font-size: 17px;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   position: sticky;
   top: 0;
   z-index: 50;
-  box-shadow: 0 2px 8px oklch(var(--navy-deep) / 0.3);
+  box-shadow: 0 3px 16px oklch(var(--navy-deep) / 0.45), 0 1px 0
+    oklch(1 0 0 / 0.08) inset;
+  text-shadow: 0 0 20px oklch(1 0 0 / 0.35), 0 1px 2px oklch(0 0 0 / 0.4);
+  border-bottom: 1px solid oklch(1 0 0 / 0.1);
+  animation: headerShimmer 4s ease-in-out infinite;
 }
 
-/* Screen transitions */
+/* ============================================================
+   SCREENS
+   ============================================================ */
+
 .screen {
   flex: 1;
   padding: 16px;
   overflow-y: auto;
+  animation: fadeSlideIn 0.35s ease both;
 }
 
-/* Screen title */
+/* Screen title — editorial treatment */
 .screen-title {
   font-family: "Cabinet Grotesk", sans-serif;
   font-weight: 800;
-  font-size: 20px;
+  font-size: 22px;
   color: oklch(var(--navy-deep));
   text-align: center;
-  margin-bottom: 16px;
-  letter-spacing: -0.01em;
+  margin-bottom: 18px;
+  letter-spacing: -0.02em;
+  position: relative;
+  animation: titleEntrance 0.45s ease both;
+}
+.screen-title::after {
+  content: "";
+  display: block;
+  width: 36px;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    oklch(var(--navy)) 0%,
+    oklch(0.55 0.18 220) 100%
+  );
+  border-radius: 2px;
+  margin: 6px auto 0;
 }
 
-/* Cards */
+/* ============================================================
+   ORDER CARDS
+   ============================================================ */
+
 .order-card {
   background: white;
-  border-radius: 10px;
-  padding: 14px;
+  border-radius: 12px;
+  padding: 14px 14px 14px 18px;
   margin-top: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px oklch(var(--border));
+  box-shadow: 0 2px 12px oklch(var(--navy) / 0.1), 0 0 0 1px
+    oklch(var(--border));
   font-size: 13px;
+  position: relative;
+  border-left: 4px solid oklch(var(--navy) / 0.25);
+  transition: box-shadow 0.2s, transform 0.2s;
+  animation: cardEntrance 0.3s ease both;
 }
+.order-card:hover {
+  box-shadow: 0 6px 20px oklch(var(--navy) / 0.15), 0 0 0 1px
+    oklch(var(--navy) / 0.12);
+  transform: translateY(-1px);
+}
+
+/* Status-colored left borders */
+.order-card--pending {
+  border-left-color: oklch(0.72 0.18 65);
+}
+.order-card--approved {
+  border-left-color: oklch(0.55 0.18 145);
+}
+.order-card--accepted {
+  border-left-color: oklch(0.48 0.16 235);
+}
+.order-card--delivered {
+  border-left-color: oklch(0.52 0.18 160);
+}
+.order-card--rejected {
+  border-left-color: oklch(0.58 0.22 25);
+}
+.order-card--billdone {
+  border-left-color: oklch(0.52 0.18 290);
+}
+
 .order-card-field {
   display: flex;
   gap: 4px;
@@ -219,71 +360,313 @@
   color: oklch(var(--foreground));
 }
 
-/* Primary button */
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
 .btn-primary {
   width: 100%;
-  padding: 12px;
+  padding: 12px 16px;
   margin: 5px 0;
   border: none;
-  border-radius: 8px;
-  background: oklch(var(--navy));
+  border-radius: 10px;
+  background: linear-gradient(
+    135deg,
+    oklch(var(--navy)) 0%,
+    oklch(0.24 0.07 248) 100%
+  );
   color: white;
   font-weight: 700;
   font-family: "Cabinet Grotesk", sans-serif;
   font-size: 14px;
   letter-spacing: 0.04em;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  box-shadow: 0 3px 10px oklch(var(--navy) / 0.3);
 }
-.btn-primary:hover {
-  background: oklch(var(--navy-dark));
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    oklch(var(--navy-dark)) 0%,
+    oklch(0.2 0.08 248) 100%
+  );
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px oklch(var(--navy) / 0.4);
+}
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0px) scale(0.98);
+  box-shadow: 0 1px 4px oklch(var(--navy) / 0.25);
 }
 .btn-primary:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
 }
-.btn-secondary {
-  background: oklch(0.55 0.01 248);
+.btn-primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px oklch(var(--navy) / 0.35), 0 3px 10px
+    oklch(var(--navy) / 0.3);
 }
-.btn-secondary:hover {
-  background: oklch(0.48 0.015 248);
+.btn-secondary {
+  background: linear-gradient(
+    135deg,
+    oklch(0.52 0.015 248) 0%,
+    oklch(0.46 0.02 248) 100%
+  );
+  box-shadow: 0 3px 10px oklch(0 0 0 / 0.15);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    oklch(0.46 0.02 248) 0%,
+    oklch(0.42 0.025 248) 100%
+  );
 }
 .btn-danger {
-  background: oklch(var(--destructive));
+  background: linear-gradient(
+    135deg,
+    oklch(var(--destructive)) 0%,
+    oklch(0.51 0.26 25) 100%
+  );
+  box-shadow: 0 3px 10px oklch(var(--destructive) / 0.3);
 }
-.btn-danger:hover {
-  background: oklch(0.52 0.245 27.325);
+.btn-danger:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    oklch(0.52 0.245 27) 0%,
+    oklch(0.46 0.27 25) 100%
+  );
 }
 .btn-success {
-  background: oklch(0.5 0.15 145);
+  background: linear-gradient(
+    135deg,
+    oklch(0.5 0.15 145) 0%,
+    oklch(0.44 0.17 145) 100%
+  );
+  box-shadow: 0 3px 10px oklch(0.5 0.15 145 / 0.3);
 }
-.btn-success:hover {
-  background: oklch(0.44 0.15 145);
+.btn-success:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    oklch(0.44 0.16 145) 0%,
+    oklch(0.39 0.18 145) 100%
+  );
+}
+.btn-bill {
+  background: linear-gradient(
+    135deg,
+    oklch(0.45 0.12 290) 0%,
+    oklch(0.39 0.15 290) 100%
+  );
+  box-shadow: 0 3px 10px oklch(0.45 0.12 290 / 0.3);
+}
+.btn-bill:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    oklch(0.39 0.14 290) 0%,
+    oklch(0.34 0.16 290) 100%
+  );
 }
 .btn-sm {
   padding: 7px 10px;
   font-size: 12px;
   width: auto;
   margin: 3px 3px 3px 0;
+  border-radius: 7px;
 }
 
-/* Form inputs */
+/* ============================================================
+   ROLE CARDS (Home Screen)
+   ============================================================ */
+
+.role-card {
+  width: 100%;
+  margin: 6px 0;
+  padding: 0;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow
+    0.18s;
+  animation: cardEntrance 0.35s ease both;
+}
+.role-card:hover {
+  transform: translateY(-3px) scale(1.01);
+}
+.role-card:active {
+  transform: scale(0.97);
+}
+.role-card:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.role-card:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.role-card:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.role-card:nth-child(4) {
+  animation-delay: 0.2s;
+}
+.role-card:nth-child(5) {
+  animation-delay: 0.25s;
+}
+
+.role-card-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 14px;
+  color: white;
+  position: relative;
+  z-index: 1;
+}
+.role-card-icon {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: oklch(1 0 0 / 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  border: 1px solid oklch(1 0 0 / 0.2);
+}
+.role-card-text {
+  flex: 1;
+  min-width: 0;
+}
+.role-card-name {
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  text-shadow: 0 1px 3px oklch(0 0 0 / 0.3);
+}
+.role-card-desc {
+  font-family: "Outfit", sans-serif;
+  font-size: 12px;
+  opacity: 0.78;
+  margin-top: 2px;
+  letter-spacing: 0.01em;
+}
+.role-card-arrow {
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.role-card:hover .role-card-arrow {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+/* Shimmer overlay on role cards */
+.role-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    oklch(1 0 0 / 0.07) 50%,
+    transparent 60%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.55s;
+  z-index: 2;
+  border-radius: 14px;
+}
+.role-card:hover::before {
+  transform: translateX(100%);
+}
+
+/* Role card gradients */
+.role-card--indent {
+  background: linear-gradient(
+    135deg,
+    oklch(0.35 0.12 265) 0%,
+    oklch(0.26 0.09 250) 100%
+  );
+  box-shadow: 0 4px 16px oklch(0.35 0.12 265 / 0.38);
+}
+.role-card--indent:hover {
+  box-shadow: 0 8px 24px oklch(0.35 0.12 265 / 0.5);
+}
+
+.role-card--blaster {
+  background: linear-gradient(
+    135deg,
+    oklch(0.52 0.15 220) 0%,
+    oklch(0.4 0.13 230) 100%
+  );
+  box-shadow: 0 4px 16px oklch(0.52 0.15 220 / 0.38);
+}
+.role-card--blaster:hover {
+  box-shadow: 0 8px 24px oklch(0.52 0.15 220 / 0.5);
+}
+
+.role-card--driver {
+  background: linear-gradient(
+    135deg,
+    oklch(0.48 0.14 200) 0%,
+    oklch(0.38 0.12 210) 100%
+  );
+  box-shadow: 0 4px 16px oklch(0.48 0.14 200 / 0.38);
+}
+.role-card--driver:hover {
+  box-shadow: 0 8px 24px oklch(0.48 0.14 200 / 0.5);
+}
+
+.role-card--manager {
+  background: linear-gradient(
+    135deg,
+    oklch(0.32 0.08 245) 0%,
+    oklch(0.22 0.07 250) 100%
+  );
+  box-shadow: 0 4px 16px oklch(0.32 0.08 245 / 0.4);
+}
+.role-card--manager:hover {
+  box-shadow: 0 8px 24px oklch(0.32 0.08 245 / 0.55);
+}
+
+.role-card--office {
+  background: linear-gradient(
+    135deg,
+    oklch(0.45 0.12 280) 0%,
+    oklch(0.35 0.1 290) 100%
+  );
+  box-shadow: 0 4px 16px oklch(0.45 0.12 280 / 0.38);
+}
+.role-card--office:hover {
+  box-shadow: 0 8px 24px oklch(0.45 0.12 280 / 0.5);
+}
+
+/* ============================================================
+   FORM INPUTS
+   ============================================================ */
+
 .form-input {
   width: 100%;
-  padding: 9px 12px;
+  padding: 10px 13px;
   margin: 4px 0;
-  border-radius: 7px;
-  border: 1px solid oklch(var(--border));
+  border-radius: 9px;
+  border: 1.5px solid oklch(var(--border));
   font-family: "Outfit", sans-serif;
   font-size: 14px;
   background: white;
   color: oklch(var(--foreground));
-  transition: border-color 0.15s;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
 }
 .form-input:focus {
   outline: none;
   border-color: oklch(var(--navy));
   box-shadow: 0 0 0 3px oklch(var(--navy) / 0.12);
+  transform: scale(1.01);
 }
 .form-input::placeholder {
   color: oklch(var(--muted-foreground));
@@ -292,18 +675,25 @@ input[type="date"].form-input {
   color-scheme: light;
 }
 
-/* Error message */
+/* ============================================================
+   ERROR MESSAGE
+   ============================================================ */
+
 .error-msg {
   color: oklch(var(--destructive));
   font-size: 12px;
   margin-top: 6px;
-  padding: 8px 10px;
+  padding: 9px 12px;
   background: oklch(var(--destructive) / 0.08);
-  border-radius: 6px;
+  border-radius: 8px;
   border-left: 3px solid oklch(var(--destructive));
+  animation: shakeIn 0.4s ease both;
 }
 
-/* Skeleton loader */
+/* ============================================================
+   SKELETON LOADER
+   ============================================================ */
+
 .skeleton {
   background: linear-gradient(
     90deg,
@@ -324,14 +714,18 @@ input[type="date"].form-input {
   }
 }
 
-/* Footer */
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
 .app-footer {
   text-align: center;
-  padding: 12px 16px;
+  padding: 13px 16px;
   font-size: 11px;
   color: oklch(var(--muted-foreground));
   border-top: 1px solid oklch(var(--border));
-  background: white;
+  background: linear-gradient(180deg, white 0%, oklch(var(--secondary)) 100%);
+  animation: footerFade 0.5s 0.2s ease both;
 }
 .app-footer a {
   color: oklch(var(--navy));
@@ -339,25 +733,179 @@ input[type="date"].form-input {
   font-weight: 600;
 }
 
-.badge-billdone {
-  background-color: oklch(var(--status-billdone-bg));
-  color: oklch(var(--status-billdone-text));
-}
-.btn-bill {
-  background: oklch(0.45 0.12 290);
-}
-.btn-bill:hover {
-  background: oklch(0.38 0.14 290);
-}
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
 
-/* Empty state */
 .empty-state {
   text-align: center;
-  padding: 32px 16px;
+  padding: 40px 16px;
   color: oklch(var(--muted-foreground));
   font-size: 14px;
 }
 .empty-state-icon {
-  font-size: 36px;
-  margin-bottom: 8px;
+  font-size: 40px;
+  margin-bottom: 10px;
+  display: inline-block;
+  animation: emptyBounce 2.5s ease-in-out infinite;
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Stagger cards */
+.order-card:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.order-card:nth-child(2) {
+  animation-delay: 0.10s;
+}
+.order-card:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.order-card:nth-child(4) {
+  animation-delay: 0.20s;
+}
+.order-card:nth-child(5) {
+  animation-delay: 0.25s;
+}
+.order-card:nth-child(6) {
+  animation-delay: 0.30s;
+}
+
+/* Header animated glow pulse */
+@keyframes headerShimmer {
+  0%,
+  100% {
+    box-shadow: 0 3px 16px oklch(var(--navy-deep) / 0.45), 0 1px 0
+      oklch(1 0 0 / 0.08) inset;
+  }
+  50% {
+    box-shadow: 0 3px 28px oklch(var(--navy-deep) / 0.7), 0 1px 0
+      oklch(1 0 0 / 0.12) inset;
+  }
+}
+
+/* Screen title letterspace entrance */
+@keyframes titleEntrance {
+  from {
+    opacity: 0;
+    letter-spacing: 0.14em;
+  }
+  to {
+    opacity: 1;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Badge pop-in */
+@keyframes badgePop {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.badge-pending,
+.badge-approved,
+.badge-accepted,
+.badge-delivered,
+.badge-rejected,
+.badge-billdone {
+  display: inline-block;
+  animation: badgePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Error shake */
+@keyframes shakeIn {
+  0% {
+    transform: translateX(-6px);
+    opacity: 0;
+  }
+  25% {
+    transform: translateX(6px);
+  }
+  50% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Empty state bounce */
+@keyframes emptyBounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+/* Footer fade */
+@keyframes footerFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Table row hover */
+.indent-table tr {
+  transition: background-color 0.15s;
+}
+.indent-table tbody tr:hover {
+  background-color: oklch(var(--navy) / 0.05);
+}
+
+/* Spinning loader enhancement */
+@keyframes spinPulse {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.08);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
 }

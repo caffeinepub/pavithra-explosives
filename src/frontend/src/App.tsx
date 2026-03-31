@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   Building2,
   CheckCircle2,
+  ChevronRight,
   ClipboardList,
   Filter,
   Loader2,
@@ -165,7 +166,10 @@ function OrderCard({
   const cardOcid = `${viewerRole ?? "blaster"}.item.${index}`;
 
   return (
-    <div className="order-card" data-ocid={cardOcid}>
+    <div
+      className={`order-card order-card--${order.status.toLowerCase()}`}
+      data-ocid={cardOcid}
+    >
       <div
         style={{
           display: "flex",
@@ -565,51 +569,95 @@ function HomeScreen({ navigate }: { navigate: (s: Screen) => void }) {
     <div className="screen">
       <h2 className="screen-title">Dashboard</h2>
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col">
         <button
           type="button"
-          className="btn-primary flex items-center justify-center gap-2"
+          className="role-card role-card--indent"
           onClick={() => navigate("indent")}
           data-ocid="home.primary_button"
         >
-          <ClipboardList className="h-4 w-4" />
-          New Indent
+          <div className="role-card-inner">
+            <div className="role-card-icon">
+              <ClipboardList className="h-8 w-8" />
+            </div>
+            <div className="role-card-text">
+              <div className="role-card-name">New Indent</div>
+              <div className="role-card-desc">
+                Submit explosive material request
+              </div>
+            </div>
+            <ChevronRight className="role-card-arrow h-5 w-5" />
+          </div>
         </button>
         <button
           type="button"
-          className="btn-primary flex items-center justify-center gap-2"
+          className="role-card role-card--blaster"
           onClick={() => navigate("blasterView")}
           data-ocid="home.secondary_button"
         >
-          <Search className="h-4 w-4" />
-          Blaster View
+          <div className="role-card-inner">
+            <div className="role-card-icon">
+              <Search className="h-8 w-8" />
+            </div>
+            <div className="role-card-text">
+              <div className="role-card-name">Blaster View</div>
+              <div className="role-card-desc">Track your submitted orders</div>
+            </div>
+            <ChevronRight className="role-card-arrow h-5 w-5" />
+          </div>
         </button>
         <button
           type="button"
-          className="btn-primary flex items-center justify-center gap-2"
+          className="role-card role-card--driver"
           onClick={() => navigate("driverLogin")}
           data-ocid="home.driver_panel_button"
         >
-          <Truck className="h-4 w-4" />
-          Driver Panel
+          <div className="role-card-inner">
+            <div className="role-card-icon">
+              <Truck className="h-8 w-8" />
+            </div>
+            <div className="role-card-text">
+              <div className="role-card-name">Driver Panel</div>
+              <div className="role-card-desc">Accept and deliver orders</div>
+            </div>
+            <ChevronRight className="role-card-arrow h-5 w-5" />
+          </div>
         </button>
         <button
           type="button"
-          className="btn-primary flex items-center justify-center gap-2"
+          className="role-card role-card--manager"
           onClick={() => navigate("managerLogin")}
           data-ocid="home.manager_panel_button"
         >
-          <ShieldCheck className="h-4 w-4" />
-          Manager Panel
+          <div className="role-card-inner">
+            <div className="role-card-icon">
+              <ShieldCheck className="h-8 w-8" />
+            </div>
+            <div className="role-card-text">
+              <div className="role-card-name">Manager Panel</div>
+              <div className="role-card-desc">
+                Approve orders and set vehicle
+              </div>
+            </div>
+            <ChevronRight className="role-card-arrow h-5 w-5" />
+          </div>
         </button>
         <button
           type="button"
-          className="btn-primary flex items-center justify-center gap-2"
+          className="role-card role-card--office"
           onClick={() => navigate("officeLogin")}
           data-ocid="home.office_panel_button"
         >
-          <Building2 className="h-4 w-4" />
-          Office Panel
+          <div className="role-card-inner">
+            <div className="role-card-icon">
+              <Building2 className="h-8 w-8" />
+            </div>
+            <div className="role-card-text">
+              <div className="role-card-name">Office Panel</div>
+              <div className="role-card-desc">Manage billing and payments</div>
+            </div>
+            <ChevronRight className="role-card-arrow h-5 w-5" />
+          </div>
         </button>
       </div>
     </div>
