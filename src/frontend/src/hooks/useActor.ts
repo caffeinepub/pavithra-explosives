@@ -27,7 +27,12 @@ export function useActor() {
 
       const actor = await createActorWithConfig(actorOptions);
       const adminToken = getSecretParameter("caffeineAdminToken") || "";
-      await actor._initializeAccessControlWithSecret(adminToken);
+      try {
+        await actor._initializeAccessControlWithSecret(adminToken);
+      } catch {
+        // If auth init fails (e.g. stale session), fall back to anonymous actor
+        return await createActorWithConfig();
+      }
       return actor;
     },
     // Only refetch when identity changes

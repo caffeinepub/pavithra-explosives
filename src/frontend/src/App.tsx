@@ -23,8 +23,8 @@ import type {
   OrderItem,
   OrderWithAmounts,
 } from "./backend.d";
+import SplashScreen from "./components/SplashScreen";
 import { useActor } from "./hooks/useActor";
-import { useInternetIdentity } from "./hooks/useInternetIdentity";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -483,82 +483,85 @@ function OrderCard({
 
 export default function App() {
   const { actor, isFetching: actorFetching } = useActor();
-  const { identity, login, isLoggingIn } = useInternetIdentity();
   const [screen, setScreen] = useState<Screen>("home");
+  const [showSplash, setShowSplash] = useState(true);
 
   const navigate = useCallback((s: Screen) => setScreen(s), []);
 
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <Package2 className="inline-block mr-2 h-4 w-4 opacity-80 -mt-0.5" />
-        Pavithra Explosives
-      </header>
+    <>
+      {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
+      <div style={{ visibility: showSplash ? "hidden" : "visible" }}>
+        <div className="app-container">
+          <header className="app-header">
+            <Package2 className="inline-block mr-2 h-4 w-4 opacity-80 -mt-0.5" />
+            Pavithra Explosives
+          </header>
 
-      <main className="flex-1">
-        {screen === "home" && <HomeScreen navigate={navigate} />}
-        {screen === "indent" && (
-          <IndentScreen
-            navigate={navigate}
-            actor={actor}
-            actorFetching={actorFetching}
-            identity={identity}
-            login={login}
-            isLoggingIn={isLoggingIn}
-          />
-        )}
-        {screen === "confirm" && <ConfirmScreen navigate={navigate} />}
-        {screen === "blasterView" && (
-          <BlasterViewScreen
-            navigate={navigate}
-            actor={actor}
-            actorFetching={actorFetching}
-            identity={identity}
-            login={login}
-            isLoggingIn={isLoggingIn}
-          />
-        )}
-        {screen === "driverLogin" && <DriverLoginScreen navigate={navigate} />}
-        {screen === "driverView" && (
-          <DriverViewScreen
-            navigate={navigate}
-            actor={actor}
-            actorFetching={actorFetching}
-          />
-        )}
-        {screen === "managerLogin" && (
-          <ManagerLoginScreen navigate={navigate} />
-        )}
-        {screen === "managerView" && (
-          <ManagerViewScreen
-            navigate={navigate}
-            actor={actor}
-            actorFetching={actorFetching}
-          />
-        )}
-        {screen === "officeLogin" && <OfficeLoginScreen navigate={navigate} />}
-        {screen === "officeView" && (
-          <OfficeViewScreen
-            navigate={navigate}
-            actor={actor}
-            actorFetching={actorFetching}
-          />
-        )}
-      </main>
+          <main className="flex-1">
+            {screen === "home" && <HomeScreen navigate={navigate} />}
+            {screen === "indent" && (
+              <IndentScreen
+                navigate={navigate}
+                actor={actor}
+                actorFetching={actorFetching}
+              />
+            )}
+            {screen === "confirm" && <ConfirmScreen navigate={navigate} />}
+            {screen === "blasterView" && (
+              <BlasterViewScreen
+                navigate={navigate}
+                actor={actor}
+                actorFetching={actorFetching}
+              />
+            )}
+            {screen === "driverLogin" && (
+              <DriverLoginScreen navigate={navigate} />
+            )}
+            {screen === "driverView" && (
+              <DriverViewScreen
+                navigate={navigate}
+                actor={actor}
+                actorFetching={actorFetching}
+              />
+            )}
+            {screen === "managerLogin" && (
+              <ManagerLoginScreen navigate={navigate} />
+            )}
+            {screen === "managerView" && (
+              <ManagerViewScreen
+                navigate={navigate}
+                actor={actor}
+                actorFetching={actorFetching}
+              />
+            )}
+            {screen === "officeLogin" && (
+              <OfficeLoginScreen navigate={navigate} />
+            )}
+            {screen === "officeView" && (
+              <OfficeViewScreen
+                navigate={navigate}
+                actor={actor}
+                actorFetching={actorFetching}
+              />
+            )}
+          </main>
 
-      <footer className="app-footer">
-        © {new Date().getFullYear()}. Built with ❤️ using{" "}
-        <a
-          href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          caffeine.ai
-        </a>
-      </footer>
+          <footer className="app-footer">
+            © {new Date().getFullYear()}. Built with ❤️ using{" "}
+            <a
+              href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              caffeine.ai
+            </a>
+          </footer>
 
-      <Toaster position="top-center" />
-    </div>
+          <Toaster position="top-center" />
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -672,11 +675,7 @@ interface ActorProps {
   actorFetching: boolean;
 }
 
-interface IndentScreenProps extends ActorProps {
-  identity: import("@icp-sdk/core/agent").Identity | undefined;
-  login: () => void;
-  isLoggingIn: boolean;
-}
+interface IndentScreenProps extends ActorProps {}
 
 function IndentScreen({ navigate, actor }: IndentScreenProps) {
   const [quarry, setQuarry] = useState("");
@@ -722,44 +721,65 @@ function IndentScreen({ navigate, actor }: IndentScreenProps) {
 
     setLoading(true);
 
-    try {
-      await actor.submitOrder(
-        quarry.trim(),
-        address.trim(),
-        blaster.trim(),
-        lease.trim(),
-        dgms.trim(),
-        date,
-        items,
-      );
-      // Reset form
-      setQuarry("");
-      setAddress("");
-      setBlaster("");
-      setLease("");
-      setDgms("");
-      setDate("");
-      setQtys({});
-      navigate("confirm");
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (
-        msg.toLowerCase().includes("1 order") ||
-        msg.toLowerCase().includes("per blaster") ||
-        msg.toLowerCase().includes("active order")
-      ) {
-        setError("Only 1 order allowed per blaster per day");
-      } else if (
-        msg.toLowerCase().includes("duplicate") ||
-        msg.toLowerCase().includes("already")
-      ) {
-        setError("Only 1 order allowed per blaster per day");
-      } else {
-        setError("Failed to submit order. Please try again.");
+    // Retry up to 3 times with backoff for transient network errors
+    let lastErr: unknown = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        await new Promise((r) => setTimeout(r, 1000 * attempt));
       }
-    } finally {
-      setLoading(false);
+      try {
+        await actor.submitOrder(
+          quarry.trim(),
+          address.trim(),
+          blaster.trim(),
+          lease.trim(),
+          dgms.trim(),
+          date,
+          items,
+        );
+        // Reset form on success
+        setQuarry("");
+        setAddress("");
+        setBlaster("");
+        setLease("");
+        setDgms("");
+        setDate("");
+        setQtys({});
+        setLoading(false);
+        navigate("confirm");
+        return;
+      } catch (err: unknown) {
+        lastErr = err;
+        const msg = err instanceof Error ? err.message : String(err);
+        // Don't retry business logic errors
+        if (
+          msg.toLowerCase().includes("1 order") ||
+          msg.toLowerCase().includes("per blaster") ||
+          msg.toLowerCase().includes("active order") ||
+          msg.toLowerCase().includes("duplicate") ||
+          msg.toLowerCase().includes("already")
+        ) {
+          break;
+        }
+      }
     }
+
+    // Handle final error
+    const msg = lastErr instanceof Error ? lastErr.message : String(lastErr);
+    if (
+      msg.toLowerCase().includes("1 order") ||
+      msg.toLowerCase().includes("per blaster") ||
+      msg.toLowerCase().includes("active order") ||
+      msg.toLowerCase().includes("duplicate") ||
+      msg.toLowerCase().includes("already")
+    ) {
+      setError("Only 1 order allowed per blaster per day");
+    } else {
+      setError(
+        "Failed to submit order. Please check your connection and try again.",
+      );
+    }
+    setLoading(false);
   };
 
   // Show loading while connecting
@@ -967,11 +987,7 @@ function ConfirmScreen({ navigate }: { navigate: (s: Screen) => void }) {
 
 // ─── Blaster View Screen ──────────────────────────────────────────────────────
 
-interface BlasterViewScreenProps extends ActorProps {
-  identity: import("@icp-sdk/core/agent").Identity | undefined;
-  login: () => void;
-  isLoggingIn: boolean;
-}
+interface BlasterViewScreenProps extends ActorProps {}
 
 function BlasterViewScreen({
   navigate,

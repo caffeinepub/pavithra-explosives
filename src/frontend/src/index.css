@@ -909,3 +909,293 @@ input[type="date"].form-input {
     transform: rotate(360deg) scale(1);
   }
 }
+
+/* ─── Splash Screen ──────────────────────────────────────────────────────── */
+
+.splash-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0a0a0f;
+  overflow: hidden;
+}
+
+.splash-exit {
+  animation: splashFadeOut 0.6s ease-in forwards;
+}
+
+@keyframes splashFadeOut {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
+/* Grid overlay */
+.splash-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+      rgba(255, 120, 0, 0.04) 1px,
+      transparent 1px
+    ), linear-gradient(90deg, rgba(255, 120, 0, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+
+/* Radial glow */
+.splash-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 60% 60% at 50% 50%,
+    rgba(255, 90, 0, 0.12) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* Sparks container */
+.splash-sparks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Individual spark */
+.spark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120px;
+  height: 3px;
+  margin-top: -1.5px;
+  margin-left: 0;
+  transform-origin: 0 50%;
+  transform: rotate(var(--spark-angle)) scaleX(0);
+  background: linear-gradient(to right, #ff6a00, #ffcc00, transparent);
+  border-radius: 2px;
+  opacity: 0;
+}
+
+.spark.spark-fire {
+  animation: sparkShoot 0.8s ease-out forwards;
+}
+
+@keyframes sparkShoot {
+  0% {
+    transform: rotate(var(--spark-angle)) scaleX(0) translateX(0);
+    opacity: 1;
+  }
+  40% {
+    transform: rotate(var(--spark-angle)) scaleX(1) translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(var(--spark-angle)) scaleX(1.4) translateX(20px);
+    opacity: 0;
+  }
+}
+
+/* Blast rings */
+.blast-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  margin-left: -5px;
+  border-radius: 50%;
+  border: 2px solid #ff6a00;
+  opacity: 0;
+}
+
+.blast-ring-2 {
+  border-color: #ffcc00;
+  animation-delay: 0.12s !important;
+}
+
+.blast-ring.blast-ring-fire {
+  animation: ringExpand 0.8s ease-out forwards;
+}
+
+.blast-ring-2.blast-ring-fire {
+  animation: ringExpand 0.8s ease-out 0.12s forwards;
+}
+
+@keyframes ringExpand {
+  0% {
+    transform: scale(0);
+    opacity: 0.9;
+  }
+  80% {
+    transform: scale(22);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(28);
+    opacity: 0;
+  }
+}
+
+/* Content block */
+.splash-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+/* Company name */
+.splash-company {
+  opacity: 0;
+  transform: translateY(24px) scale(0.94);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s
+    cubic-bezier(0.22, 1, 0.36, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+
+.splash-company.splash-company-in {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.splash-company-top {
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-weight: 900;
+  font-size: clamp(2.6rem, 8vw, 5.5rem);
+  letter-spacing: 0.22em;
+  color: #fff;
+  text-shadow: 0 0 30px rgba(255, 100, 0, 0.7), 0 0 60px rgba(255, 60, 0, 0.35),
+    0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.splash-company-bottom {
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-weight: 900;
+  font-size: clamp(1.5rem, 5vw, 3.2rem);
+  letter-spacing: 0.36em;
+  color: #ff6a00;
+  text-shadow: 0 0 20px rgba(255, 100, 0, 0.9), 0 0 50px rgba(255, 60, 0, 0.5);
+  animation: textGlowPulse 2.5s ease-in-out infinite 1.4s;
+}
+
+@keyframes textGlowPulse {
+  0%,
+  100% {
+    text-shadow: 0 0 20px rgba(255, 100, 0, 0.9), 0 0 50px rgba(255, 60, 0, 0.5);
+  }
+  50% {
+    text-shadow: 0 0 35px rgba(255, 130, 0, 1), 0 0 80px rgba(255, 80, 0, 0.8),
+      0 0 120px rgba(255, 40, 0, 0.3);
+  }
+}
+
+/* Divider */
+.splash-divider {
+  width: 0;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    #ff6a00,
+    #ffcc00,
+    #ff6a00,
+    transparent
+  );
+  margin: 18px auto 14px;
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s;
+  opacity: 0.8;
+}
+
+.splash-divider.splash-divider-in {
+  width: clamp(180px, 50vw, 380px);
+}
+
+/* Tagline */
+.splash-tagline {
+  font-family: "Outfit", sans-serif;
+  font-weight: 300;
+  font-size: clamp(0.8rem, 2.5vw, 1.1rem);
+  letter-spacing: 0.3em;
+  color: rgba(255, 200, 120, 0.85);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.6s ease 0.3s, transform 0.6s ease 0.3s;
+  text-transform: uppercase;
+}
+
+.splash-tagline.splash-tagline-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Loader section */
+.splash-loader-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 36px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.splash-loader-wrap.splash-loader-wrap-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.splash-loader-bar {
+  width: clamp(160px, 40vw, 320px);
+  height: 2px;
+  background: rgba(255, 100, 0, 0.18);
+  border-radius: 1px;
+  overflow: hidden;
+  position: relative;
+}
+
+.splash-loader-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(to right, #ff4500, #ff6a00, #ffcc00);
+  border-radius: 1px;
+  box-shadow: 0 0 10px #ff6a00, 0 0 20px #ff4500;
+}
+
+.splash-loader-fill.splash-loader-fill-run {
+  animation: loaderSweep 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes loaderSweep {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.splash-subtitle {
+  font-family: "Outfit", sans-serif;
+  font-weight: 400;
+  font-size: clamp(0.65rem, 2vw, 0.8rem);
+  letter-spacing: 0.22em;
+  color: rgba(255, 150, 60, 0.65);
+  text-transform: uppercase;
+}
