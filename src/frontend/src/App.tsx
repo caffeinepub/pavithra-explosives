@@ -9,7 +9,6 @@ import {
   LogOut,
   Package2,
   Receipt,
-  RefreshCw,
   Search,
   ShieldCheck,
   Truck,
@@ -631,7 +630,7 @@ interface IndentScreenProps extends ActorProps {
   isLoggingIn: boolean;
 }
 
-function IndentScreen({ navigate, actor, actorFetching }: IndentScreenProps) {
+function IndentScreen({ navigate, actor }: IndentScreenProps) {
   const [quarry, setQuarry] = useState("");
   const [address, setAddress] = useState("");
   const [blaster, setBlaster] = useState("");
@@ -716,7 +715,7 @@ function IndentScreen({ navigate, actor, actorFetching }: IndentScreenProps) {
   };
 
   // Show loading while connecting
-  if (actorFetching && !actor) {
+  if (!actor) {
     return (
       <div className="screen">
         <h2 className="screen-title">Explosive Indent</h2>
@@ -734,50 +733,6 @@ function IndentScreen({ navigate, actor, actorFetching }: IndentScreenProps) {
           >
             Connecting to network...
           </p>
-        </div>
-        <button
-          type="button"
-          className="btn-primary btn-secondary mt-3"
-          onClick={() => navigate("home")}
-          data-ocid="indent.cancel_button"
-        >
-          <span className="flex items-center justify-center gap-2">
-            <ArrowLeft className="h-4 w-4" /> Back
-          </span>
-        </button>
-      </div>
-    );
-  }
-
-  // Actor failed to load — show retry
-  if (!actor && !actorFetching) {
-    return (
-      <div className="screen">
-        <h2 className="screen-title">Explosive Indent</h2>
-        <div
-          className="order-card text-center mt-4"
-          data-ocid="indent.error_state"
-        >
-          <p
-            className="text-sm font-semibold mb-2"
-            style={{ color: "oklch(var(--navy-deep))" }}
-          >
-            Could not connect to network
-          </p>
-          <p
-            className="text-xs mb-3"
-            style={{ color: "oklch(var(--muted-foreground))" }}
-          >
-            Please retry the connection or go back.
-          </p>
-          <button
-            type="button"
-            className="btn-primary flex items-center justify-center gap-2"
-            onClick={() => window.location.reload()}
-            data-ocid="indent.primary_button"
-          >
-            <RefreshCw className="h-4 w-4" /> Retry Connection
-          </button>
         </div>
         <button
           type="button"
@@ -1186,7 +1141,7 @@ function DriverLoginScreen({ navigate }: { navigate: (s: Screen) => void }) {
 
 // ─── Driver View Screen ───────────────────────────────────────────────────────
 
-function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
+function DriverViewScreen({ navigate, actor }: ActorProps) {
   const [filterDate, setFilterDate] = useState("");
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
@@ -1302,7 +1257,7 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
   };
 
   // Show connecting spinner only while actorFetching and not yet timed out
-  if (actorFetching && !actor) {
+  if (!actor) {
     return (
       <div className="screen">
         <h2 className="screen-title">Driver Orders</h2>
@@ -1320,47 +1275,6 @@ function DriverViewScreen({ navigate, actor, actorFetching }: ActorProps) {
           >
             Connecting to network...
           </p>
-        </div>
-        <button
-          type="button"
-          className="btn-primary btn-secondary mt-4 flex items-center justify-center gap-2"
-          onClick={() => navigate("home")}
-          data-ocid="driver.cancel_button"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back
-        </button>
-      </div>
-    );
-  }
-
-  if (!actor && !actorFetching) {
-    return (
-      <div className="screen">
-        <h2 className="screen-title">Driver Orders</h2>
-        <div
-          className="order-card text-center mt-4"
-          data-ocid="driver.error_state"
-        >
-          <p
-            className="text-sm font-semibold mb-2"
-            style={{ color: "oklch(var(--navy-deep))" }}
-          >
-            Could not connect to network
-          </p>
-          <p
-            className="text-xs mb-3"
-            style={{ color: "oklch(var(--muted-foreground))" }}
-          >
-            Please retry the connection or go back.
-          </p>
-          <button
-            type="button"
-            className="btn-primary flex items-center justify-center gap-2"
-            onClick={() => window.location.reload()}
-            data-ocid="driver.primary_button"
-          >
-            <RefreshCw className="h-4 w-4" /> Retry Connection
-          </button>
         </div>
         <button
           type="button"
@@ -1543,7 +1457,7 @@ function ManagerLoginScreen({ navigate }: { navigate: (s: Screen) => void }) {
 
 // ─── Manager View Screen ──────────────────────────────────────────────────────
 
-function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
+function ManagerViewScreen({ navigate, actor }: ActorProps) {
   const [filterDate, setFilterDate] = useState("");
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
@@ -1726,7 +1640,7 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
   };
 
   // Show connecting spinner while actor is loading
-  if (actorFetching && !actor) {
+  if (!actor) {
     return (
       <div className="screen">
         <h2 className="screen-title">Manager Approval</h2>
@@ -1744,47 +1658,6 @@ function ManagerViewScreen({ navigate, actor, actorFetching }: ActorProps) {
           >
             Connecting to network...
           </p>
-        </div>
-        <button
-          type="button"
-          className="btn-primary btn-secondary mt-4 flex items-center justify-center gap-2"
-          onClick={() => navigate("home")}
-          data-ocid="manager.cancel_button"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back
-        </button>
-      </div>
-    );
-  }
-
-  if (!actor && !actorFetching) {
-    return (
-      <div className="screen">
-        <h2 className="screen-title">Manager Approval</h2>
-        <div
-          className="order-card text-center mt-4"
-          data-ocid="manager.error_state"
-        >
-          <p
-            className="text-sm font-semibold mb-2"
-            style={{ color: "oklch(var(--navy-deep))" }}
-          >
-            Could not connect to network
-          </p>
-          <p
-            className="text-xs mb-3"
-            style={{ color: "oklch(var(--muted-foreground))" }}
-          >
-            Please retry the connection or go back.
-          </p>
-          <button
-            type="button"
-            className="btn-primary flex items-center justify-center gap-2"
-            onClick={() => window.location.reload()}
-            data-ocid="manager.primary_button"
-          >
-            <RefreshCw className="h-4 w-4" /> Retry Connection
-          </button>
         </div>
         <button
           type="button"
@@ -1972,7 +1845,7 @@ function OfficeLoginScreen({ navigate }: { navigate: (s: Screen) => void }) {
 
 // ─── Office View Screen ───────────────────────────────────────────────────────
 
-function OfficeViewScreen({ navigate, actor, actorFetching }: ActorProps) {
+function OfficeViewScreen({ navigate, actor }: ActorProps) {
   const [filterDate, setFilterDate] = useState("");
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [officeAmounts, setOfficeAmounts] = useState<
@@ -2066,7 +1939,7 @@ function OfficeViewScreen({ navigate, actor, actorFetching }: ActorProps) {
   };
 
   // Show connecting spinner while actor is loading
-  if (actorFetching && !actor) {
+  if (!actor) {
     return (
       <div className="screen">
         <h2 className="screen-title">Office Panel</h2>
@@ -2084,47 +1957,6 @@ function OfficeViewScreen({ navigate, actor, actorFetching }: ActorProps) {
           >
             Connecting to network...
           </p>
-        </div>
-        <button
-          type="button"
-          className="btn-primary btn-secondary mt-4 flex items-center justify-center gap-2"
-          onClick={() => navigate("home")}
-          data-ocid="office.cancel_button"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back
-        </button>
-      </div>
-    );
-  }
-
-  if (!actor && !actorFetching) {
-    return (
-      <div className="screen">
-        <h2 className="screen-title">Office Panel</h2>
-        <div
-          className="order-card text-center mt-4"
-          data-ocid="office.error_state"
-        >
-          <p
-            className="text-sm font-semibold mb-2"
-            style={{ color: "oklch(var(--navy-deep))" }}
-          >
-            Could not connect to network
-          </p>
-          <p
-            className="text-xs mb-3"
-            style={{ color: "oklch(var(--muted-foreground))" }}
-          >
-            Please retry the connection or go back.
-          </p>
-          <button
-            type="button"
-            className="btn-primary flex items-center justify-center gap-2"
-            onClick={() => window.location.reload()}
-            data-ocid="office.primary_button"
-          >
-            <RefreshCw className="h-4 w-4" /> Retry Connection
-          </button>
         </div>
         <button
           type="button"
