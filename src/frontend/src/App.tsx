@@ -261,7 +261,7 @@ function OrderCard({
             <th style={{ textAlign: "left", paddingLeft: 6 }}>Item</th>
             <th>Qty</th>
             <th>Unit</th>
-            {viewerRole === "manager" && <th />}
+            {viewerRole === "manager" && <th>QTY2</th>}
             {viewerRole === "office" && <th>Note</th>}
             {(viewerRole === "manager" || viewerRole === "office") && (
               <th>Amount</th>
