@@ -256,7 +256,6 @@ function OrderCard({
             <th style={{ textAlign: "left", paddingLeft: 6 }}>Item</th>
             <th>Qty</th>
             <th>Unit</th>
-            {viewerRole === "manager" && <th />}
             {(viewerRole === "manager" || viewerRole === "office") && (
               <th>Amount</th>
             )}
@@ -295,7 +294,6 @@ function OrderCard({
                 {EXPLOSIVE_ITEMS.find((ei) => ei.name === item.name)?.unit ??
                   "—"}
               </td>
-              {viewerRole === "manager" && <td />}
               {(viewerRole === "manager" || viewerRole === "office") && (
                 <td>
                   {viewerRole === "manager" && editableItems && onItemChange ? (
