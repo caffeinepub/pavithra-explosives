@@ -47,8 +47,8 @@ type Screen =
   | "officeView";
 
 const EXPLOSIVE_ITEMS: Array<{ name: string; unit: string }> = [
-  { name: "25mm GEL", unit: "KGS" },
-  { name: "83mm Boost", unit: "KGS" },
+  { name: "25mm GEL", unit: "Box" },
+  { name: "83mm Boost", unit: "Box" },
   { name: "Detonating Fuse", unit: "Roll" },
   { name: "Nonel", unit: "NOS" },
   { name: "Ideal-E-Det", unit: "NOS" },
@@ -255,6 +255,7 @@ function OrderCard({
           <tr>
             <th style={{ textAlign: "left", paddingLeft: 6 }}>Item</th>
             <th>Qty</th>
+            <th>Unit</th>
             {(viewerRole === "manager" || viewerRole === "office") && (
               <th>Amount</th>
             )}
@@ -288,6 +289,10 @@ function OrderCard({
                 ) : (
                   item.qty || "—"
                 )}
+              </td>
+              <td>
+                {EXPLOSIVE_ITEMS.find((ei) => ei.name === item.name)?.unit ??
+                  "—"}
               </td>
               {(viewerRole === "manager" || viewerRole === "office") && (
                 <td>
