@@ -50,6 +50,11 @@ actor {
     amount : Text;
   };
 
+  type ItemNote = {
+    name : Text;
+    note : Text;
+  };
+
   type OrderStatus = {
     #pending;
     #approved;
@@ -75,6 +80,7 @@ actor {
   type OrderWithAmounts = {
     order : Order;
     amounts : [ItemAmount];
+    notes : [ItemNote];
     driverName : Text;
     vehicleNumber : Text;
   };
@@ -85,6 +91,7 @@ actor {
   let orderAmounts = Map.empty<Nat, [ItemAmount]>();
   let orderDriverNames = Map.empty<Nat, Text>();
   let orderVehicleNumbers = Map.empty<Nat, Text>();
+  let orderNotes = Map.empty<Nat, [ItemNote]>();
 
   let managerRole = Map.empty<Principal, Bool>();
   let driverRole = Map.empty<Principal, Bool>();
@@ -189,7 +196,11 @@ actor {
           case (?v) { v };
           case (null) { "" };
         };
-        { order; amounts; driverName; vehicleNumber };
+        let notes = switch (orderNotes.get(order.id)) {
+          case (?n) { n };
+          case (null) { [] };
+        };
+        { order; amounts; notes; driverName; vehicleNumber };
       }
     );
   };
@@ -204,6 +215,14 @@ actor {
       case (?o) { o };
     };
     orderAmounts.add(orderId, amounts);
+  };
+
+  public shared func updateItemNotes(orderId : Nat, notes : [ItemNote]) : async () {
+    let _ = switch (orders.get(orderId)) {
+      case (null) { Runtime.trap("Order not found") };
+      case (?o) { o };
+    };
+    orderNotes.add(orderId, notes);
   };
 
   // Approve order with vehicle number — manager must enter vehicle number on approval

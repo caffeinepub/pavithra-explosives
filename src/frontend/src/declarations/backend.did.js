@@ -23,6 +23,7 @@ export const OrderStatus = IDL.Variant({
 });
 export const OrderItem = IDL.Record({ 'qty' : IDL.Text, 'name' : IDL.Text });
 export const ItemAmount = IDL.Record({ 'amount' : IDL.Text, 'name' : IDL.Text });
+export const ItemNote = IDL.Record({ 'name' : IDL.Text, 'note' : IDL.Text });
 export const Order = IDL.Record({
   'id' : IDL.Nat,
   'status' : OrderStatus,
@@ -38,6 +39,7 @@ export const Order = IDL.Record({
 export const OrderWithAmounts = IDL.Record({
   'order' : Order,
   'amounts' : IDL.Vec(ItemAmount),
+    'notes' : IDL.Vec(ItemNote),
   'driverName' : IDL.Text,
   'vehicleNumber' : IDL.Text,
 });
@@ -82,6 +84,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'updateItemAmounts' : IDL.Func([IDL.Nat, IDL.Vec(ItemAmount)], [], []),
+    'updateItemNotes' : IDL.Func([IDL.Nat, IDL.Vec(ItemNote)], [], []),
   'updateOrderItems' : IDL.Func([IDL.Nat, IDL.Vec(OrderItem)], [], []),
   'updateOrderStatus' : IDL.Func([IDL.Nat, OrderStatus], [], []),
 });
@@ -104,6 +107,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const OrderItem = IDL.Record({ 'qty' : IDL.Text, 'name' : IDL.Text });
   const ItemAmount = IDL.Record({ 'amount' : IDL.Text, 'name' : IDL.Text });
+  const ItemNote = IDL.Record({ 'name' : IDL.Text, 'note' : IDL.Text });
   const Order = IDL.Record({
     'id' : IDL.Nat,
     'status' : OrderStatus,
@@ -119,6 +123,7 @@ export const idlFactory = ({ IDL }) => {
   const OrderWithAmounts = IDL.Record({
     'order' : Order,
     'amounts' : IDL.Vec(ItemAmount),
+    'notes' : IDL.Vec(ItemNote),
     'driverName' : IDL.Text,
     'vehicleNumber' : IDL.Text,
   });
@@ -163,6 +168,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'updateItemAmounts' : IDL.Func([IDL.Nat, IDL.Vec(ItemAmount)], [], []),
+    'updateItemNotes' : IDL.Func([IDL.Nat, IDL.Vec(ItemNote)], [], []),
     'updateOrderItems' : IDL.Func([IDL.Nat, IDL.Vec(OrderItem)], [], []),
     'updateOrderStatus' : IDL.Func([IDL.Nat, OrderStatus], [], []),
   });

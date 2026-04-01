@@ -14,11 +14,12 @@ import {
   ShieldCheck,
   Truck,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { OrderStatus } from "./backend";
 import type {
   ItemAmount,
+  ItemNote,
   Order,
   OrderItem,
   OrderWithAmounts,
@@ -101,6 +102,7 @@ interface EditableItemState {
   qty: string;
   name: string;
   amount: string;
+  note: string;
 }
 
 interface OrderCardProps {
@@ -110,9 +112,11 @@ interface OrderCardProps {
   editableItems?: Record<string, EditableItemState>;
   /** For office panel: map of itemName -> amount (read-only) */
   orderAmountsMap?: Record<string, string>;
+  /** For office panel: map of itemName -> note (read-only, office only) */
+  orderNotesMap?: Record<string, string>;
   onItemChange?: (
     originalName: string,
-    field: "name" | "qty" | "amount",
+    field: "name" | "qty" | "amount" | "note",
     value: string,
   ) => void;
   onApprove?: () => void;
@@ -142,6 +146,7 @@ function OrderCard({
   viewerRole,
   editableItems,
   orderAmountsMap,
+  orderNotesMap,
   onItemChange,
   onApprove,
   onReject,
@@ -257,6 +262,7 @@ function OrderCard({
             <th>Qty</th>
             <th>Unit</th>
             {viewerRole === "manager" && <th />}
+            {viewerRole === "office" && <th>Note</th>}
             {(viewerRole === "manager" || viewerRole === "office") && (
               <th>Amount</th>
             )}
@@ -295,7 +301,25 @@ function OrderCard({
                 {EXPLOSIVE_ITEMS.find((ei) => ei.name === item.name)?.unit ??
                   "—"}
               </td>
-              {viewerRole === "manager" && <td />}
+              {viewerRole === "manager" && (
+                <td>
+                  {editableItems && onItemChange ? (
+                    <input
+                      value={editableItems[item.name]?.note ?? ""}
+                      onChange={(e) =>
+                        onItemChange(item.name, "note", e.target.value)
+                      }
+                      placeholder=""
+                      style={{ width: 70 }}
+                    />
+                  ) : null}
+                </td>
+              )}
+              {viewerRole === "office" && (
+                <td style={{ textAlign: "center" }}>
+                  {orderNotesMap?.[item.name] || "—"}
+                </td>
+              )}
               {(viewerRole === "manager" || viewerRole === "office") && (
                 <td>
                   {viewerRole === "manager" && editableItems && onItemChange ? (
@@ -487,6 +511,23 @@ function OrderCard({
 }
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
+
+async function withRetry<T>(fn: () => Promise<T>, retries = 6): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < retries; i++) {
+    if (i > 0) {
+      // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+      const delay = Math.min(1500 * 2 ** (i - 1), 6000);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+    try {
+      return await fn();
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr;
+}
 
 export default function App() {
   const { actor, isFetching: actorFetching } = useActor();
@@ -728,11 +769,12 @@ function IndentScreen({ navigate, actor }: IndentScreenProps) {
 
     setLoading(true);
 
-    // Retry up to 3 times with backoff for transient network errors
+    // Retry up to 6 times with exponential backoff for transient network errors
     let lastErr: unknown = null;
     for (let attempt = 0; attempt < 3; attempt++) {
       if (attempt > 0) {
-        await new Promise((r) => setTimeout(r, 1000 * attempt));
+        const delay = Math.min(1500 * 2 ** (attempt - 1), 6000);
+        await new Promise((r) => setTimeout(r, delay));
       }
       try {
         await actor.submitOrder(
@@ -1030,7 +1072,7 @@ function BlasterViewScreen({
     setLoading(true);
     setSearched(false);
     try {
-      const allOwa = await actor.getAllOrdersWithAmounts();
+      const allOwa = await withRetry(() => actor!.getAllOrdersWithAmounts());
       const filtered = allOwa.filter((owa) => {
         const nameMatch =
           owa.order.blaster.toLowerCase() === blasterName.trim().toLowerCase();
@@ -1052,7 +1094,10 @@ function BlasterViewScreen({
       setDriverNamesMap(dnMap);
       setVehicleNamesMap(vnMap);
     } catch {
-      setError("Failed to load orders. Please try again.");
+      // Auto-retry silently after 5s
+      setTimeout(() => {
+        if (blasterName.trim()) handleSearch();
+      }, 5000);
     } finally {
       setLoading(false);
     }
@@ -1231,13 +1276,15 @@ function DriverViewScreen({ navigate, actor }: ActorProps) {
   const fetchOrders = useCallback(
     async (date: string) => {
       if (!actor) {
-        setError("Network not ready. Please refresh and try again.");
+        // Actor still loading, skip silently
         return;
       }
       setLoading(true);
       setError("");
       try {
-        const allWithAmounts = await actor.getAllOrdersWithAmounts();
+        const allWithAmounts = await withRetry(() =>
+          actor!.getAllOrdersWithAmounts(),
+        );
         const filtered = allWithAmounts.filter(
           (owa) => owa.order.date === date,
         );
@@ -1258,15 +1305,28 @@ function DriverViewScreen({ navigate, actor }: ActorProps) {
           }
         }
         setVehicleNamesMap(driverVnMap);
-      } catch {
-        setError("Failed to load orders. Please try again.");
-        setAllOrders([]);
+      } catch (err) {
+        console.error("Driver fetchOrders error:", err);
+        // Auto-retry after 5s without showing error
+        if (driverMountedRef.current) {
+          setTimeout(() => {
+            if (driverMountedRef.current && date) fetchOrders(date);
+          }, 5000);
+        }
       } finally {
         setLoading(false);
       }
     },
     [actor],
   );
+
+  const driverMountedRef = useRef(true);
+  useEffect(() => {
+    driverMountedRef.current = true;
+    return () => {
+      driverMountedRef.current = false;
+    };
+  }, []);
 
   // Derived filtered orders — no useEffect needed
   const orders = allOrders.filter((o) => {
@@ -1550,13 +1610,13 @@ function ManagerViewScreen({ navigate, actor }: ActorProps) {
   const fetchOrders = useCallback(
     async (date: string) => {
       if (!actor) {
-        setError("Network not ready. Please refresh and try again.");
+        // Actor still loading, skip silently
         return;
       }
       setLoading(true);
       setError("");
       try {
-        const all = await actor.getAllOrdersWithAmounts();
+        const all = await withRetry(() => actor!.getAllOrdersWithAmounts());
         const filtered = all.filter((owa) => owa.order.date === date);
         setAllOrders(filtered.map((owa) => owa.order));
 
@@ -1574,6 +1634,7 @@ function ManagerViewScreen({ navigate, actor }: ActorProps) {
               qty: item.qty,
               name: item.name,
               amount: amountsMap[item.name] ?? "",
+              note: "",
             };
           }
           initial[String(o.id)] = itemMap;
@@ -1595,9 +1656,15 @@ function ManagerViewScreen({ navigate, actor }: ActorProps) {
           }
         }
         setVehicleNamesMap(managerVnMap);
-      } catch {
-        setError("Failed to load orders. Please try again.");
-        setAllOrders([]);
+      } catch (err) {
+        console.error("Manager fetchOrders error:", err);
+        // Don't show error immediately - retry after delay using the same date param
+        if (mountedFetchRef.current) {
+          // biome-ignore lint/correctness/useExhaustiveDependencies: intentional retry
+          setTimeout(() => {
+            if (mountedFetchRef.current && date) fetchOrders(date);
+          }, 5000);
+        }
       } finally {
         setLoading(false);
       }
@@ -1605,13 +1672,21 @@ function ManagerViewScreen({ navigate, actor }: ActorProps) {
     [actor],
   );
 
+  const mountedFetchRef = useRef(true);
+  useEffect(() => {
+    mountedFetchRef.current = true;
+    return () => {
+      mountedFetchRef.current = false;
+    };
+  }, []);
+
   // Derived orders — already filtered by date in fetchOrders
   const orders = allOrders;
 
   const handleItemChange = (
     orderId: string,
     originalName: string,
-    field: "name" | "qty" | "amount",
+    field: "name" | "qty" | "amount" | "note",
     value: string,
   ) => {
     setEditableItems((prev) => ({
@@ -1649,8 +1724,13 @@ function ManagerViewScreen({ navigate, actor }: ActorProps) {
         name: editableItems[oid]?.[item.name]?.name ?? item.name,
         amount: editableItems[oid]?.[item.name]?.amount ?? "",
       }));
+      const updatedNotes: ItemNote[] = order.items.map((item) => ({
+        name: editableItems[oid]?.[item.name]?.name ?? item.name,
+        note: editableItems[oid]?.[item.name]?.note ?? "",
+      }));
       await actor.updateOrderItems(order.id, updatedItems);
       await actor.updateItemAmounts(order.id, updatedAmounts);
+      await actor.updateItemNotes(order.id, updatedNotes);
       await actor.approveOrderWithVehicle(order.id, vehicleInput.trim());
       toast.success("Order approved.");
       setPendingApproveId(null);
@@ -1690,8 +1770,13 @@ function ManagerViewScreen({ navigate, actor }: ActorProps) {
         name: editableItems[oid]?.[item.name]?.name ?? item.name,
         amount: editableItems[oid]?.[item.name]?.amount ?? "",
       }));
+      const updatedNotes: ItemNote[] = order.items.map((item) => ({
+        name: editableItems[oid]?.[item.name]?.name ?? item.name,
+        note: editableItems[oid]?.[item.name]?.note ?? "",
+      }));
       await actor.updateOrderItems(order.id, updatedItems);
       await actor.updateItemAmounts(order.id, updatedAmounts);
+      await actor.updateItemNotes(order.id, updatedNotes);
       toast.success("Items updated.");
       await fetchOrders(filterDate);
     } catch {
@@ -1922,6 +2007,9 @@ function OfficeViewScreen({ navigate, actor }: ActorProps) {
   const [officeAmounts, setOfficeAmounts] = useState<
     Record<string, Record<string, string>>
   >({});
+  const [officeNotes, setOfficeNotes] = useState<
+    Record<string, Record<string, string>>
+  >({});
   const [loading, setLoading] = useState(false);
   const [actioningId, setActioningId] = useState<bigint | null>(null);
   const [error, setError] = useState("");
@@ -1935,13 +2023,13 @@ function OfficeViewScreen({ navigate, actor }: ActorProps) {
   const fetchOrders = useCallback(
     async (date: string) => {
       if (!actor) {
-        setError("Network not ready. Please refresh and try again.");
+        // Actor still loading, skip silently
         return;
       }
       setLoading(true);
       setError("");
       try {
-        const all = await actor.getAllOrdersWithAmounts();
+        const all = await withRetry(() => actor!.getAllOrdersWithAmounts());
         const filtered = all.filter((owa) => owa.order.date === date);
         setAllOrders(filtered.map((owa) => owa.order));
         // Store amounts for display in office panel
@@ -1954,6 +2042,16 @@ function OfficeViewScreen({ navigate, actor }: ActorProps) {
           amts[String(owa.order.id)] = m;
         }
         setOfficeAmounts(amts);
+        // Store notes for display in office panel
+        const nts: Record<string, Record<string, string>> = {};
+        for (const owa of filtered) {
+          const nm: Record<string, string> = {};
+          for (const n of owa.notes ?? []) {
+            nm[n.name] = n.note ?? "";
+          }
+          nts[String(owa.order.id)] = nm;
+        }
+        setOfficeNotes(nts);
         // Build driver names map from order data (driverName included in response)
         const officeDnMap: Record<string, string> = {};
         const officeVnMap: Record<string, string> = {};
@@ -1967,15 +2065,28 @@ function OfficeViewScreen({ navigate, actor }: ActorProps) {
         }
         setDriverNamesMap(officeDnMap);
         setVehicleNamesMap(officeVnMap);
-      } catch {
-        setError("Failed to load orders. Please try again.");
-        setAllOrders([]);
+      } catch (err) {
+        console.error("Office fetchOrders error:", err);
+        // Auto-retry after 5s without showing error
+        if (officeMountedRef.current) {
+          setTimeout(() => {
+            if (officeMountedRef.current && date) fetchOrders(date);
+          }, 5000);
+        }
       } finally {
         setLoading(false);
       }
     },
     [actor],
   );
+
+  const officeMountedRef = useRef(true);
+  useEffect(() => {
+    officeMountedRef.current = true;
+    return () => {
+      officeMountedRef.current = false;
+    };
+  }, []);
 
   // Show only orders that the manager has touched (approved and beyond), plus billDone
   const orders = allOrders.filter(
@@ -2106,6 +2217,7 @@ function OfficeViewScreen({ navigate, actor }: ActorProps) {
             index={idx + 1}
             viewerRole="office"
             orderAmountsMap={officeAmounts[String(order.id)] ?? {}}
+            orderNotesMap={officeNotes[String(order.id)] ?? {}}
             isActioning={actioningId === order.id}
             onBillDone={() => handleBillDone(order.id)}
             driverNamesMap={driverNamesMap}

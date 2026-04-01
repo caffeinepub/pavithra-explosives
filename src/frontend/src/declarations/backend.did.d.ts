@@ -11,6 +11,7 @@ import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
 export interface ItemAmount { 'amount' : string, 'name' : string }
+export interface ItemNote { 'name' : string, 'note' : string }
 export interface Order {
   'id' : bigint,
   'status' : OrderStatus,
@@ -27,6 +28,7 @@ export interface OrderItem { 'qty' : string, 'name' : string }
 export interface OrderWithAmounts {
   'order' : Order,
   'amounts' : Array<ItemAmount>,
+  'notes' : Array<ItemNote>,
   'driverName' : string,
   'vehicleNumber' : string,
 }
@@ -62,6 +64,7 @@ export interface _SERVICE {
     bigint
   >,
   'updateItemAmounts' : ActorMethod<[bigint, Array<ItemAmount>], undefined>,
+  'updateItemNotes' : ActorMethod<[bigint, Array<ItemNote>], undefined>,
   'updateOrderItems' : ActorMethod<[bigint, Array<OrderItem>], undefined>,
   'updateOrderStatus' : ActorMethod<[bigint, OrderStatus], undefined>,
 }

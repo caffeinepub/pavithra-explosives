@@ -112,9 +112,14 @@ export interface ItemAmount {
     name: string;
     amount: string;
 }
+export interface ItemNote {
+    name: string;
+    note: string;
+}
 export interface OrderWithAmounts {
     order: Order;
     amounts: Array<ItemAmount>;
+    notes: Array<ItemNote>;
     driverName: string;
     vehicleNumber: string;
 }
@@ -147,6 +152,7 @@ export interface backendInterface {
     submitOrder(quarry: string, address: string, blaster: string, lease: string, dgms: string, date: string, items: Array<OrderItem>): Promise<bigint>;
     getAllOrdersWithAmounts(): Promise<Array<OrderWithAmounts>>;
     updateItemAmounts(orderId: bigint, amounts: Array<ItemAmount>): Promise<void>;
+    updateItemNotes(orderId: bigint, notes: Array<ItemNote>): Promise<void>;
     updateOrderItems(orderId: bigint, items: Array<OrderItem>): Promise<void>;
     updateOrderStatus(orderId: bigint, newStatus: OrderStatus): Promise<void>;
     getAllDriverNames(): Promise<Array<[bigint, string]>>;
@@ -401,6 +407,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.updateItemAmounts(arg0, arg1);
+            return result;
+        }
+    }
+    async updateItemNotes(arg0: bigint, arg1: Array<ItemNote>): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateItemNotes(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateItemNotes(arg0, arg1);
             return result;
         }
     }

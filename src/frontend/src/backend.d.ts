@@ -30,9 +30,14 @@ export interface ItemAmount {
     name: string;
     amount: string;
 }
+export interface ItemNote {
+    name: string;
+    note: string;
+}
 export interface OrderWithAmounts {
     order: Order;
     amounts: Array<ItemAmount>;
+    notes: Array<ItemNote>;
     driverName: string;
     vehicleNumber: string;
 }
@@ -67,6 +72,7 @@ export interface backendInterface {
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     submitOrder(quarry: string, address: string, blaster: string, lease: string, dgms: string, date: string, items: Array<OrderItem>): Promise<bigint>;
     updateItemAmounts(orderId: bigint, amounts: Array<ItemAmount>): Promise<void>;
+    updateItemNotes(orderId: bigint, notes: Array<ItemNote>): Promise<void>;
     updateOrderItems(orderId: bigint, items: Array<OrderItem>): Promise<void>;
     updateOrderStatus(orderId: bigint, newStatus: OrderStatus): Promise<void>;
 }
