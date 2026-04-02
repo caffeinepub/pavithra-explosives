@@ -785,9 +785,9 @@ function IndentScreen({ navigate, actor }: IndentScreenProps) {
 
     // Retry up to 10 times with exponential backoff for transient network errors
     let lastErr: unknown = null;
-    for (let attempt = 0; attempt < 10; attempt++) {
+    for (let attempt = 0; attempt < 3; attempt++) {
       if (attempt > 0) {
-        const delay = Math.min(2000 * 2 ** (attempt - 1), 15000);
+        const delay = Math.min(1000 * attempt, 3000);
         await new Promise((r) => setTimeout(r, delay));
       }
       try {
