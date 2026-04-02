@@ -9,17 +9,23 @@ export function useActor() {
   const actorQuery = useQuery<backendInterface>({
     queryKey: [ACTOR_QUERY_KEY],
     queryFn: async () => {
-      // Always use a clean anonymous connection — no Internet Identity, no token
+      // Always use anonymous connection — no Internet Identity, no token
       return await createActorWithConfig();
     },
     staleTime: Number.POSITIVE_INFINITY,
-    retry: 20,
+    retry: 100,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000),
+    enabled: true,
   });
 
   useEffect(() => {
     if (actorQuery.data) {
       queryClient.invalidateQueries({
+        predicate: (query) => {
+          return !query.queryKey.includes(ACTOR_QUERY_KEY);
+        },
+      });
+      queryClient.refetchQueries({
         predicate: (query) => {
           return !query.queryKey.includes(ACTOR_QUERY_KEY);
         },

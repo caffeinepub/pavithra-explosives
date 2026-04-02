@@ -512,7 +512,7 @@ function OrderCard({
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
-async function withRetry<T>(fn: () => Promise<T>, retries = 6): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, retries = 15): Promise<T> {
   let lastErr: unknown;
   for (let i = 0; i < retries; i++) {
     if (i > 0) {
@@ -755,13 +755,6 @@ function IndentScreen({ navigate, actor }: IndentScreenProps) {
       return;
     }
 
-    if (!actor) {
-      setError(
-        "Still connecting to network. Please wait a moment and try again.",
-      );
-      return;
-    }
-
     const items: OrderItem[] = EXPLOSIVE_ITEMS.map((ei) => ({
       name: ei.name,
       qty: qtys[ei.name] ?? "",
@@ -769,15 +762,36 @@ function IndentScreen({ navigate, actor }: IndentScreenProps) {
 
     setLoading(true);
 
-    // Retry up to 6 times with exponential backoff for transient network errors
+    // Wait for actor if not yet ready (up to 30s)
+    let currentActor = actor;
+    if (!currentActor) {
+      for (let w = 0; w < 30; w++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        // actor ref will be updated by react re-render, but we can try anyway
+        if (actor) {
+          currentActor = actor;
+          break;
+        }
+      }
+    }
+
+    if (!currentActor) {
+      setError(
+        "Still connecting to network. Please wait a moment and try again.",
+      );
+      setLoading(false);
+      return;
+    }
+
+    // Retry up to 10 times with exponential backoff for transient network errors
     let lastErr: unknown = null;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < 10; attempt++) {
       if (attempt > 0) {
-        const delay = Math.min(1500 * 2 ** (attempt - 1), 6000);
+        const delay = Math.min(2000 * 2 ** (attempt - 1), 15000);
         await new Promise((r) => setTimeout(r, delay));
       }
       try {
-        await actor.submitOrder(
+        await currentActor.submitOrder(
           quarry.trim(),
           address.trim(),
           blaster.trim(),
@@ -1352,13 +1366,15 @@ function DriverViewScreen({ navigate, actor }: ActorProps) {
     if (!actor) return;
     setActioningId(orderId);
     try {
-      await actor.acceptOrderWithDriver(orderId, driverNameInput.trim());
+      await withRetry(() =>
+        actor!.acceptOrderWithDriver(orderId, driverNameInput.trim()),
+      );
       toast.success("Order accepted.");
       setPendingAcceptId(null);
       setDriverNameInput("");
       await fetchOrders(filterDate);
     } catch {
-      toast.error("Failed to accept order.");
+      toast.error("Failed to accept order. Please try again.");
     } finally {
       setActioningId(null);
     }
@@ -1368,11 +1384,13 @@ function DriverViewScreen({ navigate, actor }: ActorProps) {
     if (!actor) return;
     setActioningId(orderId);
     try {
-      await actor.updateOrderStatus(orderId, OrderStatus.delivered);
+      await withRetry(() =>
+        actor!.updateOrderStatus(orderId, OrderStatus.delivered),
+      );
       toast.success("Order marked as delivered.");
       await fetchOrders(filterDate);
     } catch {
-      toast.error("Failed to update order.");
+      toast.error("Failed to update order. Please try again.");
     } finally {
       setActioningId(null);
     }
@@ -1732,16 +1750,18 @@ function ManagerViewScreen({ navigate, actor }: ActorProps) {
         name: editableItems[oid]?.[item.name]?.name ?? item.name,
         note: editableItems[oid]?.[item.name]?.note ?? "",
       }));
-      await actor.updateOrderItems(order.id, updatedItems);
-      await actor.updateItemAmounts(order.id, updatedAmounts);
-      await actor.updateItemNotes(order.id, updatedNotes);
-      await actor.approveOrderWithVehicle(order.id, vehicleInput.trim());
+      await withRetry(() => actor!.updateOrderItems(order.id, updatedItems));
+      await withRetry(() => actor!.updateItemAmounts(order.id, updatedAmounts));
+      await withRetry(() => actor!.updateItemNotes(order.id, updatedNotes));
+      await withRetry(() =>
+        actor!.approveOrderWithVehicle(order.id, vehicleInput.trim()),
+      );
       toast.success("Order approved.");
       setPendingApproveId(null);
       setVehicleInput("");
       await fetchOrders(filterDate);
     } catch {
-      toast.error("Failed to approve order.");
+      toast.error("Failed to approve order. Please try again.");
     } finally {
       setActioningId(null);
     }
@@ -1751,11 +1771,13 @@ function ManagerViewScreen({ navigate, actor }: ActorProps) {
     if (!actor) return;
     setActioningId(orderId);
     try {
-      await actor.updateOrderStatus(orderId, OrderStatus.rejected);
+      await withRetry(() =>
+        actor!.updateOrderStatus(orderId, OrderStatus.rejected),
+      );
       toast.success("Order rejected.");
       await fetchOrders(filterDate);
     } catch {
-      toast.error("Failed to reject order.");
+      toast.error("Failed to reject order. Please try again.");
     } finally {
       setActioningId(null);
     }
@@ -1778,13 +1800,13 @@ function ManagerViewScreen({ navigate, actor }: ActorProps) {
         name: editableItems[oid]?.[item.name]?.name ?? item.name,
         note: editableItems[oid]?.[item.name]?.note ?? "",
       }));
-      await actor.updateOrderItems(order.id, updatedItems);
-      await actor.updateItemAmounts(order.id, updatedAmounts);
-      await actor.updateItemNotes(order.id, updatedNotes);
+      await withRetry(() => actor!.updateOrderItems(order.id, updatedItems));
+      await withRetry(() => actor!.updateItemAmounts(order.id, updatedAmounts));
+      await withRetry(() => actor!.updateItemNotes(order.id, updatedNotes));
       toast.success("Items updated.");
       await fetchOrders(filterDate);
     } catch {
-      toast.error("Failed to save changes.");
+      toast.error("Failed to save changes. Please try again.");
     } finally {
       setActioningId(null);
     }
@@ -2105,11 +2127,13 @@ function OfficeViewScreen({ navigate, actor }: ActorProps) {
     if (!actor) return;
     setActioningId(orderId);
     try {
-      await actor.updateOrderStatus(orderId, OrderStatus.billDone);
+      await withRetry(() =>
+        actor!.updateOrderStatus(orderId, OrderStatus.billDone),
+      );
       toast.success("Bill marked as done.");
       await fetchOrders(filterDate);
     } catch {
-      toast.error("Failed to update bill status.");
+      toast.error("Failed to update bill status. Please try again.");
     } finally {
       setActioningId(null);
     }
