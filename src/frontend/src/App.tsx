@@ -112,11 +112,9 @@ interface OrderCardProps {
   editableItems?: Record<string, EditableItemState>;
   /** For office panel: map of itemName -> amount (read-only) */
   orderAmountsMap?: Record<string, string>;
-  /** For office panel: map of itemName -> note (read-only, office only) */
-  orderNotesMap?: Record<string, string>;
   onItemChange?: (
     originalName: string,
-    field: "name" | "qty" | "amount" | "note",
+    field: "name" | "qty" | "amount",
     value: string,
   ) => void;
   onApprove?: () => void;
@@ -146,7 +144,6 @@ function OrderCard({
   viewerRole,
   editableItems,
   orderAmountsMap,
-  orderNotesMap,
   onItemChange,
   onApprove,
   onReject,
@@ -261,8 +258,6 @@ function OrderCard({
             <th style={{ textAlign: "left", paddingLeft: 6 }}>Item</th>
             <th>Qty</th>
             <th>Unit</th>
-            {viewerRole === "manager" && <th>QTY2</th>}
-            {viewerRole === "office" && <th>Note</th>}
             {(viewerRole === "manager" || viewerRole === "office") && (
               <th>Amount</th>
             )}
@@ -301,25 +296,7 @@ function OrderCard({
                 {EXPLOSIVE_ITEMS.find((ei) => ei.name === item.name)?.unit ??
                   "—"}
               </td>
-              {viewerRole === "manager" && (
-                <td>
-                  {editableItems && onItemChange ? (
-                    <input
-                      value={editableItems[item.name]?.note ?? ""}
-                      onChange={(e) =>
-                        onItemChange(item.name, "note", e.target.value)
-                      }
-                      placeholder=""
-                      style={{ width: 70 }}
-                    />
-                  ) : null}
-                </td>
-              )}
-              {viewerRole === "office" && (
-                <td style={{ textAlign: "center" }}>
-                  {orderNotesMap?.[item.name] || "—"}
-                </td>
-              )}
+
               {(viewerRole === "manager" || viewerRole === "office") && (
                 <td>
                   {viewerRole === "manager" && editableItems && onItemChange ? (
@@ -1708,7 +1685,7 @@ function ManagerViewScreen({ navigate, actor }: ActorProps) {
   const handleItemChange = (
     orderId: string,
     originalName: string,
-    field: "name" | "qty" | "amount" | "note",
+    field: "name" | "qty" | "amount",
     value: string,
   ) => {
     setEditableItems((prev) => ({
@@ -2033,9 +2010,6 @@ function OfficeViewScreen({ navigate, actor }: ActorProps) {
   const [officeAmounts, setOfficeAmounts] = useState<
     Record<string, Record<string, string>>
   >({});
-  const [officeNotes, setOfficeNotes] = useState<
-    Record<string, Record<string, string>>
-  >({});
   const [loading, setLoading] = useState(false);
   const [actioningId, setActioningId] = useState<bigint | null>(null);
   const [error, setError] = useState("");
@@ -2068,16 +2042,6 @@ function OfficeViewScreen({ navigate, actor }: ActorProps) {
           amts[String(owa.order.id)] = m;
         }
         setOfficeAmounts(amts);
-        // Store notes for display in office panel
-        const nts: Record<string, Record<string, string>> = {};
-        for (const owa of filtered) {
-          const nm: Record<string, string> = {};
-          for (const n of owa.notes ?? []) {
-            nm[n.name] = n.note ?? "";
-          }
-          nts[String(owa.order.id)] = nm;
-        }
-        setOfficeNotes(nts);
         // Build driver names map from order data (driverName included in response)
         const officeDnMap: Record<string, string> = {};
         const officeVnMap: Record<string, string> = {};
@@ -2245,7 +2209,6 @@ function OfficeViewScreen({ navigate, actor }: ActorProps) {
             index={idx + 1}
             viewerRole="office"
             orderAmountsMap={officeAmounts[String(order.id)] ?? {}}
-            orderNotesMap={officeNotes[String(order.id)] ?? {}}
             isActioning={actioningId === order.id}
             onBillDone={() => handleBillDone(order.id)}
             driverNamesMap={driverNamesMap}
