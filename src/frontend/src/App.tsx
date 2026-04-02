@@ -1628,13 +1628,17 @@ function ManagerViewScreen({ navigate, actor }: ActorProps) {
           for (const ia of owa.amounts) {
             amountsMap[ia.name] = ia.amount;
           }
+          const notesMap: Record<string, string> = {};
+          for (const n of owa.notes ?? []) {
+            notesMap[n.name] = n.note ?? "";
+          }
           const itemMap: Record<string, EditableItemState> = {};
           for (const item of o.items) {
             itemMap[item.name] = {
               qty: item.qty,
               name: item.name,
               amount: amountsMap[item.name] ?? "",
-              note: "",
+              note: notesMap[item.name] ?? "",
             };
           }
           initial[String(o.id)] = itemMap;
