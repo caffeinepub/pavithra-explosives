@@ -10,7 +10,6 @@ import {
   Filter,
   Flame,
   Loader2,
-  Lock,
   LogOut,
   MapPin,
   Package2,
@@ -603,43 +602,6 @@ function HomeScreen({ navigate }: { navigate: (s: Screen) => void }) {
     <div className="screen">
       <h2 className="screen-title">Dashboard</h2>
 
-      <div className="home-welcome">
-        <p
-          style={{
-            fontFamily: "Outfit, sans-serif",
-            fontSize: 12,
-            color: "oklch(var(--muted-foreground))",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            marginBottom: 4,
-          }}
-        >
-          Welcome to
-        </p>
-        <p
-          style={{
-            fontFamily: "Cabinet Grotesk, sans-serif",
-            fontWeight: 900,
-            fontSize: 20,
-            color: "oklch(var(--navy-deep))",
-            letterSpacing: "0.04em",
-            marginBottom: 8,
-          }}
-        >
-          PAVITHRA EXPLOSIVES
-        </p>
-        <div
-          style={{
-            height: 2,
-            width: 48,
-            background:
-              "linear-gradient(90deg, oklch(0.55 0.18 30), oklch(0.65 0.18 55))",
-            borderRadius: 2,
-            margin: "0 auto",
-          }}
-        />
-      </div>
-
       <div className="flex flex-col">
         <button
           type="button"
@@ -1184,56 +1146,43 @@ function BlasterViewScreen({
 
   return (
     <div className="screen">
-      <h2 className="screen-title flex items-center justify-center gap-2">
-        <Search className="h-5 w-5" style={{ color: "oklch(var(--navy))" }} />{" "}
-        Blaster Order View
-      </h2>
+      <h2 className="screen-title">Blaster Order View</h2>
 
-      <div className="filter-section">
-        <div className="filter-section-label">
-          <Search size={12} /> Search Orders
+      <input
+        className="form-input"
+        placeholder="Blaster Name (Required)"
+        value={blasterName}
+        onChange={(e) => setBlasterName(e.target.value)}
+        data-ocid="blaster.search_input"
+      />
+      <input
+        className="form-input"
+        type="date"
+        value={searchDate}
+        onChange={(e) => setSearchDate(e.target.value)}
+        data-ocid="blaster.date_input"
+      />
+
+      {error && (
+        <div className="error-msg" data-ocid="blaster.error_state">
+          {error}
         </div>
-        <input
-          className="form-input"
-          placeholder="Blaster Name (Required)"
-          value={blasterName}
-          onChange={(e) => setBlasterName(e.target.value)}
-          data-ocid="blaster.search_input"
-        />
-        <input
-          className="form-input"
-          type="date"
-          value={searchDate}
-          onChange={(e) => setSearchDate(e.target.value)}
-          data-ocid="blaster.date_input"
-        />
+      )}
 
-        {error && (
-          <div className="error-msg" data-ocid="blaster.error_state">
-            {error}
-          </div>
+      <button
+        type="button"
+        className="btn-primary mt-2 flex items-center justify-center gap-2"
+        onClick={handleSearch}
+        disabled={loading || actorFetching}
+        data-ocid="blaster.primary_button"
+      >
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Search className="h-4 w-4" />
         )}
-
-        <button
-          type="button"
-          className="btn-primary mt-2 flex items-center justify-center gap-2"
-          style={{
-            background:
-              "linear-gradient(135deg, oklch(0.52 0.15 220), oklch(0.4 0.13 230))",
-            boxShadow: "0 3px 10px oklch(0.52 0.15 220 / 0.35)",
-          }}
-          onClick={handleSearch}
-          disabled={loading || actorFetching}
-          data-ocid="blaster.primary_button"
-        >
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Search className="h-4 w-4" />
-          )}
-          Search Orders
-        </button>
-      </div>
+        Search
+      </button>
 
       <button
         type="button"
@@ -1292,69 +1241,42 @@ function DriverLoginScreen({ navigate }: { navigate: (s: Screen) => void }) {
 
   return (
     <div className="screen">
-      <h2 className="screen-title flex items-center justify-center gap-2">
-        <Truck className="h-5 w-5" style={{ color: "oklch(var(--navy))" }} />{" "}
-        Driver Login
-      </h2>
+      <h2 className="screen-title">Driver Login</h2>
 
-      <div className="login-card">
-        <div
-          className="login-card-accent"
-          style={{
-            background:
-              "linear-gradient(90deg, oklch(0.48 0.14 200), oklch(0.38 0.12 210))",
-          }}
-        />
-        <div className="login-card-body">
-          <div
-            className="login-icon-circle"
+      <div className="order-card">
+        <div className="flex items-center gap-2 mb-4">
+          <Truck className="h-5 w-5" style={{ color: "oklch(var(--navy))" }} />
+          <span
+            className="font-bold text-sm"
             style={{
-              background:
-                "linear-gradient(135deg, oklch(0.48 0.14 200 / 0.12), oklch(0.38 0.12 210 / 0.2))",
-              border: "1.5px solid oklch(0.48 0.14 200 / 0.3)",
+              fontFamily: "Cabinet Grotesk, sans-serif",
+              color: "oklch(var(--navy))",
             }}
           >
-            <Truck
-              className="h-8 w-8"
-              style={{ color: "oklch(0.38 0.12 210)" }}
-            />
-          </div>
-          <p className="login-title">Driver Panel</p>
-          <p className="login-subtitle">Enter your password to continue</p>
-
-          <div className="login-input-wrap">
-            <Lock className="login-input-icon h-4 w-4" />
-            <input
-              className="form-input"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-              data-ocid="driver.input"
-            />
-          </div>
-
-          {error && (
-            <div
-              className="error-msg"
-              style={{ width: "100%" }}
-              data-ocid="driver.error_state"
-            >
-              {error}
-            </div>
-          )}
+            Driver Authentication
+          </span>
         </div>
+
+        <input
+          className="form-input"
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+          data-ocid="driver.input"
+        />
+
+        {error && (
+          <div className="error-msg" data-ocid="driver.error_state">
+            {error}
+          </div>
+        )}
       </div>
 
       <button
         type="button"
-        className="btn-primary"
-        style={{
-          background:
-            "linear-gradient(135deg, oklch(0.48 0.14 200), oklch(0.38 0.12 210))",
-          boxShadow: "0 3px 10px oklch(0.48 0.14 200 / 0.35)",
-        }}
+        className="btn-primary mt-3"
         onClick={handleLogin}
         data-ocid="driver.primary_button"
       >
@@ -1544,52 +1466,38 @@ function DriverViewScreen({ navigate, actor }: ActorProps) {
 
   return (
     <div className="screen">
-      <h2 className="screen-title flex items-center justify-center gap-2">
-        <Truck className="h-5 w-5" style={{ color: "oklch(var(--navy))" }} />{" "}
-        Driver Orders
-      </h2>
+      <h2 className="screen-title">Driver Orders</h2>
 
-      <div className="filter-section">
-        <div className="filter-section-label">
-          <Calendar size={12} /> Filter by Date
-        </div>
-        <div className="flex gap-2 items-center">
-          <input
-            className="form-input flex-1"
-            type="date"
-            value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
-            data-ocid="driver.date_input"
-          />
-          <button
-            type="button"
-            className="btn-primary btn-sm"
-            style={{
-              width: "auto",
-              whiteSpace: "nowrap",
-              background:
-                "linear-gradient(135deg, oklch(0.48 0.14 200), oklch(0.38 0.12 210))",
-              boxShadow: "0 2px 8px oklch(0.48 0.14 200 / 0.35)",
-            }}
-            onClick={handleFilter}
-            disabled={loading}
-            data-ocid="driver.secondary_button"
-          >
-            {loading ? (
-              <Loader2 className="h-3 w-3 animate-spin inline" />
-            ) : (
-              <Filter className="h-3 w-3 inline" />
-            )}{" "}
-            Filter
-          </button>
-        </div>
-
-        {error && (
-          <div className="error-msg mt-2" data-ocid="driver.error_state">
-            {error}
-          </div>
-        )}
+      <div className="flex gap-2 items-center">
+        <input
+          className="form-input flex-1"
+          type="date"
+          value={filterDate}
+          onChange={(e) => setFilterDate(e.target.value)}
+          data-ocid="driver.date_input"
+        />
+        <button
+          type="button"
+          className="btn-primary btn-sm"
+          style={{ width: "auto", whiteSpace: "nowrap" }}
+          onClick={handleFilter}
+          disabled={loading}
+          data-ocid="driver.secondary_button"
+        >
+          {loading ? (
+            <Loader2 className="h-3 w-3 animate-spin inline" />
+          ) : (
+            <Filter className="h-3 w-3 inline" />
+          )}{" "}
+          Filter
+        </button>
       </div>
+
+      {error && (
+        <div className="error-msg mt-2" data-ocid="driver.error_state">
+          {error}
+        </div>
+      )}
 
       {loading && (
         <div data-ocid="driver.loading_state">
@@ -1665,72 +1573,45 @@ function ManagerLoginScreen({ navigate }: { navigate: (s: Screen) => void }) {
 
   return (
     <div className="screen">
-      <h2 className="screen-title flex items-center justify-center gap-2">
-        <ShieldCheck
-          className="h-5 w-5"
-          style={{ color: "oklch(var(--navy))" }}
-        />{" "}
-        Manager Login
-      </h2>
+      <h2 className="screen-title">Manager Login</h2>
 
-      <div className="login-card">
-        <div
-          className="login-card-accent"
-          style={{
-            background:
-              "linear-gradient(90deg, oklch(0.32 0.08 245), oklch(0.22 0.07 250))",
-          }}
-        />
-        <div className="login-card-body">
-          <div
-            className="login-icon-circle"
+      <div className="order-card">
+        <div className="flex items-center gap-2 mb-4">
+          <ShieldCheck
+            className="h-5 w-5"
+            style={{ color: "oklch(var(--navy))" }}
+          />
+          <span
+            className="font-bold text-sm"
             style={{
-              background:
-                "linear-gradient(135deg, oklch(0.32 0.08 245 / 0.12), oklch(0.22 0.07 250 / 0.2))",
-              border: "1.5px solid oklch(0.32 0.08 245 / 0.3)",
+              fontFamily: "Cabinet Grotesk, sans-serif",
+              color: "oklch(var(--navy))",
             }}
           >
-            <ShieldCheck
-              className="h-8 w-8"
-              style={{ color: "oklch(0.28 0.065 245)" }}
-            />
-          </div>
-          <p className="login-title">Manager Panel</p>
-          <p className="login-subtitle">Enter your password to continue</p>
-
-          <div className="login-input-wrap">
-            <Lock className="login-input-icon h-4 w-4" />
-            <input
-              className="form-input"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-              data-ocid="manager.input"
-            />
-          </div>
-
-          {error && (
-            <div
-              className="error-msg"
-              style={{ width: "100%" }}
-              data-ocid="manager.error_state"
-            >
-              {error}
-            </div>
-          )}
+            Manager Authentication
+          </span>
         </div>
+
+        <input
+          className="form-input"
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+          data-ocid="manager.input"
+        />
+
+        {error && (
+          <div className="error-msg" data-ocid="manager.error_state">
+            {error}
+          </div>
+        )}
       </div>
 
       <button
         type="button"
-        className="btn-primary"
-        style={{
-          background:
-            "linear-gradient(135deg, oklch(0.32 0.08 245), oklch(0.22 0.07 250))",
-          boxShadow: "0 3px 10px oklch(0.32 0.08 245 / 0.4)",
-        }}
+        className="btn-primary mt-3"
         onClick={handleLogin}
         data-ocid="manager.primary_button"
       >
@@ -2001,55 +1882,38 @@ function ManagerViewScreen({ navigate, actor }: ActorProps) {
 
   return (
     <div className="screen">
-      <h2 className="screen-title flex items-center justify-center gap-2">
-        <ShieldCheck
-          className="h-5 w-5"
-          style={{ color: "oklch(var(--navy))" }}
-        />{" "}
-        Manager Approval
-      </h2>
+      <h2 className="screen-title">Manager Approval</h2>
 
-      <div className="filter-section">
-        <div className="filter-section-label">
-          <Calendar size={12} /> Filter by Date
-        </div>
-        <div className="flex gap-2 items-center">
-          <input
-            className="form-input flex-1"
-            type="date"
-            value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
-            data-ocid="manager.date_input"
-          />
-          <button
-            type="button"
-            className="btn-primary btn-sm"
-            style={{
-              width: "auto",
-              whiteSpace: "nowrap",
-              background:
-                "linear-gradient(135deg, oklch(0.32 0.08 245), oklch(0.22 0.07 250))",
-              boxShadow: "0 2px 8px oklch(0.32 0.08 245 / 0.4)",
-            }}
-            onClick={handleFilter}
-            disabled={loading}
-            data-ocid="manager.secondary_button"
-          >
-            {loading ? (
-              <Loader2 className="h-3 w-3 animate-spin inline" />
-            ) : (
-              <Filter className="h-3 w-3 inline" />
-            )}{" "}
-            Filter
-          </button>
-        </div>
-
-        {error && (
-          <div className="error-msg mt-2" data-ocid="manager.error_state">
-            {error}
-          </div>
-        )}
+      <div className="flex gap-2 items-center">
+        <input
+          className="form-input flex-1"
+          type="date"
+          value={filterDate}
+          onChange={(e) => setFilterDate(e.target.value)}
+          data-ocid="manager.date_input"
+        />
+        <button
+          type="button"
+          className="btn-primary btn-sm"
+          style={{ width: "auto", whiteSpace: "nowrap" }}
+          onClick={handleFilter}
+          disabled={loading}
+          data-ocid="manager.secondary_button"
+        >
+          {loading ? (
+            <Loader2 className="h-3 w-3 animate-spin inline" />
+          ) : (
+            <Filter className="h-3 w-3 inline" />
+          )}{" "}
+          Filter
+        </button>
       </div>
+
+      {error && (
+        <div className="error-msg mt-2" data-ocid="manager.error_state">
+          {error}
+        </div>
+      )}
 
       {loading && (
         <div data-ocid="manager.loading_state">
@@ -2130,72 +1994,45 @@ function OfficeLoginScreen({ navigate }: { navigate: (s: Screen) => void }) {
 
   return (
     <div className="screen">
-      <h2 className="screen-title flex items-center justify-center gap-2">
-        <Building2
-          className="h-5 w-5"
-          style={{ color: "oklch(var(--navy))" }}
-        />{" "}
-        Office Login
-      </h2>
+      <h2 className="screen-title">Office Login</h2>
 
-      <div className="login-card">
-        <div
-          className="login-card-accent"
-          style={{
-            background:
-              "linear-gradient(90deg, oklch(0.45 0.12 280), oklch(0.35 0.1 290))",
-          }}
-        />
-        <div className="login-card-body">
-          <div
-            className="login-icon-circle"
+      <div className="order-card">
+        <div className="flex items-center gap-2 mb-4">
+          <Building2
+            className="h-5 w-5"
+            style={{ color: "oklch(var(--navy))" }}
+          />
+          <span
+            className="font-bold text-sm"
             style={{
-              background:
-                "linear-gradient(135deg, oklch(0.45 0.12 280 / 0.12), oklch(0.35 0.1 290 / 0.2))",
-              border: "1.5px solid oklch(0.45 0.12 280 / 0.3)",
+              fontFamily: "Cabinet Grotesk, sans-serif",
+              color: "oklch(var(--navy))",
             }}
           >
-            <Building2
-              className="h-8 w-8"
-              style={{ color: "oklch(0.38 0.12 285)" }}
-            />
-          </div>
-          <p className="login-title">Office Panel</p>
-          <p className="login-subtitle">Enter your password to continue</p>
-
-          <div className="login-input-wrap">
-            <Lock className="login-input-icon h-4 w-4" />
-            <input
-              className="form-input"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-              data-ocid="office.input"
-            />
-          </div>
-
-          {error && (
-            <div
-              className="error-msg"
-              style={{ width: "100%" }}
-              data-ocid="office.error_state"
-            >
-              {error}
-            </div>
-          )}
+            Office Authentication
+          </span>
         </div>
+
+        <input
+          className="form-input"
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+          data-ocid="office.input"
+        />
+
+        {error && (
+          <div className="error-msg" data-ocid="office.error_state">
+            {error}
+          </div>
+        )}
       </div>
 
       <button
         type="button"
-        className="btn-primary"
-        style={{
-          background:
-            "linear-gradient(135deg, oklch(0.45 0.12 280), oklch(0.35 0.1 290))",
-          boxShadow: "0 3px 10px oklch(0.45 0.12 280 / 0.35)",
-        }}
+        className="btn-primary mt-3"
         onClick={handleLogin}
         data-ocid="office.primary_button"
       >
@@ -2359,55 +2196,38 @@ function OfficeViewScreen({ navigate, actor }: ActorProps) {
 
   return (
     <div className="screen">
-      <h2 className="screen-title flex items-center justify-center gap-2">
-        <Building2
-          className="h-5 w-5"
-          style={{ color: "oklch(var(--navy))" }}
-        />{" "}
-        Office Panel
-      </h2>
+      <h2 className="screen-title">Office Panel</h2>
 
-      <div className="filter-section">
-        <div className="filter-section-label">
-          <Calendar size={12} /> Filter by Date
-        </div>
-        <div className="flex gap-2 items-center">
-          <input
-            className="form-input flex-1"
-            type="date"
-            value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
-            data-ocid="office.date_input"
-          />
-          <button
-            type="button"
-            className="btn-primary btn-sm"
-            style={{
-              width: "auto",
-              whiteSpace: "nowrap",
-              background:
-                "linear-gradient(135deg, oklch(0.45 0.12 280), oklch(0.35 0.1 290))",
-              boxShadow: "0 2px 8px oklch(0.45 0.12 280 / 0.35)",
-            }}
-            onClick={handleFilter}
-            disabled={loading}
-            data-ocid="office.secondary_button"
-          >
-            {loading ? (
-              <Loader2 className="h-3 w-3 animate-spin inline" />
-            ) : (
-              <Filter className="h-3 w-3 inline" />
-            )}{" "}
-            Filter
-          </button>
-        </div>
-
-        {error && (
-          <div className="error-msg mt-2" data-ocid="office.error_state">
-            {error}
-          </div>
-        )}
+      <div className="flex gap-2 items-center">
+        <input
+          className="form-input flex-1"
+          type="date"
+          value={filterDate}
+          onChange={(e) => setFilterDate(e.target.value)}
+          data-ocid="office.date_input"
+        />
+        <button
+          type="button"
+          className="btn-primary btn-sm"
+          style={{ width: "auto", whiteSpace: "nowrap" }}
+          onClick={handleFilter}
+          disabled={loading}
+          data-ocid="office.secondary_button"
+        >
+          {loading ? (
+            <Loader2 className="h-3 w-3 animate-spin inline" />
+          ) : (
+            <Filter className="h-3 w-3 inline" />
+          )}{" "}
+          Filter
+        </button>
       </div>
+
+      {error && (
+        <div className="error-msg mt-2" data-ocid="office.error_state">
+          {error}
+        </div>
+      )}
 
       {loading && (
         <div data-ocid="office.loading_state">

@@ -306,7 +306,7 @@ body::before {
    ============================================================ */
 
 .order-card {
-  background: white;
+  background: linear-gradient(135deg, white 0%, oklch(var(--navy) / 0.015) 100%);
   border-radius: 12px;
   padding: 14px 14px 14px 18px;
   margin-top: 10px;
@@ -358,6 +358,13 @@ body::before {
 }
 .order-card-value {
   color: oklch(var(--foreground));
+}
+
+/* Order card header row (Date + Status badge) */
+.order-card-header-row {
+  border-bottom: 1px solid oklch(var(--border));
+  padding-bottom: 8px;
+  margin-bottom: 8px;
 }
 
 /* ============================================================
@@ -1198,4 +1205,200 @@ input[type="date"].form-input {
   letter-spacing: 0.22em;
   color: rgba(255, 150, 60, 0.65);
   text-transform: uppercase;
+}
+
+/* ── Indent Form Sections ── */
+.indent-section {
+  background: white;
+  border-radius: 12px;
+  border: 1.5px solid oklch(var(--border));
+  padding: 14px 14px 10px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px oklch(var(--navy) / 0.06);
+}
+.indent-section-label {
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: oklch(var(--navy));
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.indent-section-label::after {
+  content: "";
+  flex: 1;
+  height: 1.5px;
+  background: linear-gradient(
+    90deg,
+    oklch(var(--navy) / 0.2) 0%,
+    transparent 100%
+  );
+  border-radius: 1px;
+}
+.indent-textarea {
+  width: 100%;
+  padding: 10px 13px;
+  margin: 4px 0;
+  border-radius: 9px;
+  border: 1.5px solid oklch(var(--border));
+  font-family: "Outfit", sans-serif;
+  font-size: 14px;
+  background: white;
+  color: oklch(var(--foreground));
+  transition: border-color 0.2s, box-shadow 0.2s;
+  resize: vertical;
+  min-height: 80px;
+}
+.indent-textarea:focus {
+  outline: none;
+  border-color: oklch(var(--navy));
+  box-shadow: 0 0 0 3px oklch(var(--navy) / 0.12);
+}
+.indent-textarea::placeholder {
+  color: oklch(var(--muted-foreground));
+}
+.btn-submit-gradient {
+  background: linear-gradient(
+    135deg,
+    oklch(0.55 0.18 30) 0%,
+    oklch(0.65 0.18 55) 100%
+  );
+  color: white;
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 0;
+  width: 100%;
+  cursor: pointer;
+  box-shadow: 0 4px 14px oklch(0.55 0.18 30 / 0.35);
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  margin-top: 8px;
+}
+.btn-submit-gradient:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px oklch(0.55 0.18 30 / 0.45);
+}
+.btn-submit-gradient:active:not(:disabled) {
+  transform: translateY(0);
+}
+.btn-submit-gradient:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   LOGIN CARD — Professional login panel for Driver/Manager/Office
+   ============================================================ */
+
+.login-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px oklch(var(--navy) / 0.14), 0 0 0 1px
+    oklch(var(--border));
+  margin: 8px 0 16px;
+  animation: cardEntrance 0.4s ease both;
+}
+.login-card-accent {
+  height: 5px;
+  width: 100%;
+}
+.login-card-body {
+  padding: 28px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.login-icon-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.login-title {
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: oklch(var(--navy-deep));
+  letter-spacing: -0.01em;
+  text-align: center;
+}
+.login-subtitle {
+  font-family: "Outfit", sans-serif;
+  font-size: 13px;
+  color: oklch(var(--muted-foreground));
+  text-align: center;
+  margin-bottom: 16px;
+}
+.login-input-wrap {
+  position: relative;
+  width: 100%;
+  margin: 4px 0;
+}
+.login-input-wrap .login-input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: oklch(var(--muted-foreground));
+  pointer-events: none;
+}
+.login-input-wrap .form-input {
+  padding-left: 38px;
+}
+
+/* ============================================================
+   FILTER SECTION CARD — for Driver/Manager/Office date filter
+   ============================================================ */
+
+.filter-section {
+  background: white;
+  border-radius: 12px;
+  border: 1.5px solid oklch(var(--border));
+  padding: 14px 14px 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px oklch(var(--navy) / 0.06);
+}
+.filter-section-label {
+  font-family: "Cabinet Grotesk", sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: oklch(var(--navy));
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.filter-section-label::after {
+  content: "";
+  flex: 1;
+  height: 1.5px;
+  background: linear-gradient(
+    90deg,
+    oklch(var(--navy) / 0.2) 0%,
+    transparent 100%
+  );
+  border-radius: 1px;
+}
+
+/* Welcome header on home screen */
+.home-welcome {
+  text-align: center;
+  margin-bottom: 16px;
+  padding: 8px 0;
+  animation: fadeSlideIn 0.4s ease both;
 }
