@@ -270,7 +270,7 @@ function OrderCard({
           </tr>
         </thead>
         <tbody>
-          {order.items.map((item) => (
+          {order.items.map((item, itemIdx) => (
             <tr key={item.name}>
               <td style={{ textAlign: "left", paddingLeft: 6 }}>
                 {viewerRole === "manager" && editableItems && onItemChange ? (
@@ -299,7 +299,8 @@ function OrderCard({
                 )}
               </td>
               <td>
-                {EXPLOSIVE_ITEMS.find((ei) => ei.name === item.name)?.unit ??
+                {EXPLOSIVE_ITEMS[itemIdx]?.unit ??
+                  EXPLOSIVE_ITEMS.find((ei) => ei.name === item.name)?.unit ??
                   "—"}
               </td>
 
@@ -1828,7 +1829,6 @@ function ManagerViewScreen({ navigate, actor }: ActorProps) {
         console.error("Manager fetchOrders error:", err);
         // Don't show error immediately - retry after delay using the same date param
         if (mountedFetchRef.current) {
-          // biome-ignore lint/correctness/useExhaustiveDependencies: intentional retry
           setTimeout(() => {
             if (mountedFetchRef.current && date) fetchOrders(date);
           }, 5000);
